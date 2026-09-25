@@ -573,14 +573,11 @@
   }
 
   // ---------- data layer: Google Sheets via Apps Script Web App ----------
-  // Paste the "Web app" URL from your Apps Script deployment here (Deploy > Manage deployments > Web app URL).
-  // Ends in /exec. See the setup guide for how to get this.
-  var API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  var API_URL = "https://script.google.com/macros/s/AKfycbynY7L38IowRGR5kdcDzrRfNday-0mRTKfF_o3MIVBSdTaQhLlBmDAcDjuUzOnClmTk/exec";
 
   function apiConfigured(){ return API_URL && API_URL.indexOf('https://script.google.com') === 0; }
 
   async function apiPost(body){
-    // text/plain avoids a CORS preflight against Apps Script
     var res = await fetch(API_URL, { method:'POST', body: JSON.stringify(body) });
     return res.json();
   }
