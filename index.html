@@ -1,0 +1,739 @@
+<title>KH Twin Log</title>
+<style>
+  :root{
+    --bg:#F5F4F0;
+    --surface:#FFFFFF;
+    --surface-2:#ECEAE4;
+    --ink:#1B2230;
+    --ink-soft:#5B6472;
+    --ink-faint:#8A93A1;
+    --border:#DEDBD3;
+    --accent:#0E6B5C;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E4F1EE;
+    --amber:#C77A1E;
+    --amber-soft:#FBEDDA;
+    --good:#2E7D4F;
+    --good-soft:#E4F3E9;
+    --bad:#C0392B;
+    --bad-soft:#FBEAE7;
+    --shadow: 0 1px 2px rgba(27,34,48,.06), 0 6px 20px -8px rgba(27,34,48,.15);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14181F;
+      --surface:#1B212B;
+      --surface-2:#232A35;
+      --ink:#EDEFF3;
+      --ink-soft:#AEB6C2;
+      --ink-faint:#77808F;
+      --border:#2C3340;
+      --accent:#3FB39B;
+      --accent-ink:#0A1512;
+      --accent-soft:#193029;
+      --amber:#E0A550;
+      --amber-soft:#2E2416;
+      --good:#57B884;
+      --good-soft:#173226;
+      --bad:#E5766A;
+      --bad-soft:#331C19;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px -8px rgba(0,0,0,.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14181F;
+    --surface:#1B212B;
+    --surface-2:#232A35;
+    --ink:#EDEFF3;
+    --ink-soft:#AEB6C2;
+    --ink-faint:#77808F;
+    --border:#2C3340;
+    --accent:#3FB39B;
+    --accent-ink:#0A1512;
+    --accent-soft:#193029;
+    --amber:#E0A550;
+    --amber-soft:#2E2416;
+    --good:#57B884;
+    --good-soft:#173226;
+    --bad:#E5766A;
+    --bad-soft:#331C19;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px -8px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  body[lang="ar"], .ar{ font-family:'IBM Plex Sans Arabic','IBM Plex Sans',-apple-system,sans-serif; }
+  .app{ max-width:640px; margin:0 auto; padding-inline:16px; padding-block:0 32px; min-height:100%; }
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:20;
+    background:var(--bg); padding-block:14px 10px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand{ display:flex; flex-direction:column; gap:1px; }
+  .brand b{ font-size:15px; letter-spacing:.2px; }
+  .brand span{ font-size:11.5px; color:var(--ink-faint); }
+  .modes{ display:flex; background:var(--surface-2); border-radius:99px; padding:3px; gap:2px; }
+  .modes button{
+    border:0; background:transparent; color:var(--ink-soft); font-size:12.5px; font-weight:600;
+    padding:7px 13px; border-radius:99px; cursor:pointer; font-family:inherit;
+  }
+  .modes button.on{ background:var(--accent); color:var(--accent-ink); }
+
+  h1{ font-size:19px; margin:18px 0 4px; letter-spacing:.1px; }
+  .sub{ color:var(--ink-soft); font-size:13px; margin:0 0 16px; line-height:1.5; }
+
+  /* ---- entry grid ---- */
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+  .tile{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:16px 14px; text-align:start; cursor:pointer; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:8px; font-family:inherit; color:var(--ink);
+  }
+  .tile .ic{
+    width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    background:var(--accent-soft); color:var(--accent); font-size:17px;
+  }
+  .tile b{ font-size:14.5px; line-height:1.35; }
+  .tile small{ color:var(--ink-faint); font-size:11.5px; }
+
+  /* ---- card / form ---- */
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:18px; box-shadow:var(--shadow); margin-bottom:14px;
+  }
+  .card-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .back{
+    border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+    width:32px; height:32px; border-radius:9px; font-size:16px; cursor:pointer; flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card-head b{ font-size:16px; }
+
+  label{ display:block; font-size:12.5px; color:var(--ink-soft); margin:12px 0 5px; font-weight:600; }
+  label:first-of-type{ margin-top:0; }
+  input,select,textarea{
+    width:100%; font-family:inherit; font-size:15px; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:11px 12px; outline:none;
+  }
+  input:focus,select:focus,textarea:focus{ border-color:var(--accent); }
+  textarea{ resize:vertical; min-height:56px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .calcbox{
+    display:flex; gap:10px; margin-top:14px; background:var(--surface-2); border-radius:11px; padding:12px 14px;
+  }
+  .calcbox > div{ flex:1; text-align:center; }
+  .calcbox span{ display:block; font-size:11px; color:var(--ink-faint); margin-bottom:3px; }
+  .calcbox b{ font-size:16px; font-variant-numeric:tabular-nums; }
+  .calcbox b.ok{ color:var(--good); }
+  .calcbox b.short{ color:var(--bad); }
+  .calcbox b.over{ color:var(--amber); }
+
+  .submit{
+    width:100%; margin-top:18px; border:0; background:var(--accent); color:var(--accent-ink);
+    font-family:inherit; font-weight:700; font-size:15px; padding:13px; border-radius:11px; cursor:pointer;
+  }
+  .submit:active{ opacity:.85; }
+  .submit[disabled]{ opacity:.5; }
+
+  .toast{
+    position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%) translateY(8px);
+    background:var(--ink); color:var(--bg); padding:11px 18px; border-radius:99px; font-size:13.5px;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---- dashboard ---- */
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .stat{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px;
+    box-shadow:var(--shadow);
+  }
+  .stat span{ display:block; font-size:11.5px; color:var(--ink-faint); margin-bottom:6px; }
+  .stat b{ font-size:20px; font-variant-numeric:tabular-nums; letter-spacing:-.2px; }
+  .stat.wide{ grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; }
+
+  .sec-title{ font-size:12.5px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.5px; margin:22px 0 10px; }
+  .feed{ display:flex; flex-direction:column; gap:8px; }
+  .item{
+    display:flex; align-items:center; gap:11px; background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:11px 12px; box-shadow:var(--shadow);
+  }
+  .item .badge{
+    width:30px; height:30px; border-radius:9px; flex:none; display:flex; align-items:center; justify-content:center;
+    font-size:14px; background:var(--accent-soft); color:var(--accent);
+  }
+  .item .mid{ flex:1; min-width:0; }
+  .item .mid .t1{ font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .item .mid .t2{ font-size:11.5px; color:var(--ink-faint); margin-top:1px; }
+  .item .amt{ font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; flex:none; }
+  .item .del{
+    border:0; background:transparent; color:var(--ink-faint); font-size:16px; cursor:pointer; flex:none; padding:4px;
+  }
+  .empty{ color:var(--ink-faint); font-size:13px; padding:18px 4px; text-align:center; }
+  .note{
+    background:var(--amber-soft); color:var(--amber); border-radius:10px; padding:10px 12px; font-size:12px;
+    line-height:1.5; margin-top:20px;
+  }
+  [hidden]{ display:none !important; }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+
+<div class="app" id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <b id="brandTitle">KH Twin</b>
+      <span id="brandSub">محطة خميلة التوأم</span>
+    </div>
+    <div class="modes">
+      <button id="modeEntryBtn" class="on">إدخال</button>
+      <button id="modeDashBtn">Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ================= ENTRY MODE ================= -->
+  <div id="entryMode" dir="rtl" lang="ar">
+
+    <div id="entryHome">
+      <h1>شو تسجل اليوم؟</h1>
+      <p class="sub">اضغط على النوع، عبّي الحقول القليلة، واحفظ. كل شي يوصل مباشرة لصاحب المحطة.</p>
+      <div class="grid">
+        <button class="tile" data-form="shift">
+          <span class="ic">💵</span>
+          <b>نقدية الوردية</b>
+          <small>كل عامل، كل يوم</small>
+        </button>
+        <button class="tile" data-form="fuel">
+          <span class="ic">⛽</span>
+          <b>قراءة الخزانات</b>
+          <small>كمية الوقود المتبقية</small>
+        </button>
+        <button class="tile" data-form="deposit">
+          <span class="ic">🏦</span>
+          <b>إيداع بنكي</b>
+          <small>نقدية أودعتها اليوم</small>
+        </button>
+        <button class="tile" data-form="collection">
+          <span class="ic">🧾</span>
+          <b>دفعة مستلمة</b>
+          <small>سالم، الخاطري، العربية...</small>
+        </button>
+        <button class="tile" data-form="expense">
+          <span class="ic">📄</span>
+          <b>مصروف</b>
+          <small>كهرباء، صيانة، رواتب...</small>
+        </button>
+        <button class="tile" data-form="clearing">
+          <span class="ic">🔄</span>
+          <b>تحويل / دفع شخصي</b>
+          <small>محمد أو محمود</small>
+        </button>
+        <button class="tile" data-form="sale">
+          <span class="ic">🏢</span>
+          <b>بيع بالحساب</b>
+          <small>سالم، الخاطري، العربية...</small>
+        </button>
+        <button class="tile" data-form="oomco">
+          <span class="ic">🛢️</span>
+          <b>دفعة لعمان أويل</b>
+          <small>فاتورة OOMCO</small>
+        </button>
+      </div>
+
+      <div class="sec-title">آخر ما سجّلته</div>
+      <div class="feed" id="mineFeed"><div class="empty">لسا ما سجّلت شي</div></div>
+    </div>
+
+    <!-- shift form -->
+    <div class="card" data-panel="shift" hidden>
+      <div class="card-head"><button class="back">→</button><b>نقدية الوردية</b></div>
+      <form data-type="shift" id="shiftForm">
+        <label>التاريخ</label><input type="date" name="date" required>
+        <label>العامل</label>
+        <select name="worker" required>
+          <option value="">اختر...</option>
+          <option>إرفاد</option><option>نافاس</option><option>نزار</option>
+          <option>شجاد</option><option>شان</option><option value="__other">غيره</option>
+        </select>
+        <input name="workerOther" placeholder="اسم العامل" hidden>
+
+        <label>إجمالي المبيعات (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="gross" inputmode="decimal" class="calc" required>
+
+        <div class="row2">
+          <div><label>فيزا</label><input type="number" step="0.001" min="0" name="visa" inputmode="decimal" class="calc" value="0"></div>
+          <div><label>عمان أويل الرقمي (إي-فيل، بسمة...)</label><input type="number" step="0.001" min="0" name="digital" inputmode="decimal" class="calc" value="0"></div>
+        </div>
+        <div class="row2">
+          <div><label>مبيعات شركات (بالحساب)</label><input type="number" step="0.001" min="0" name="corp" inputmode="decimal" class="calc" value="0"></div>
+          <div><label>تحويل جوال لمحمود</label><input type="number" step="0.001" min="0" name="mobile" inputmode="decimal" class="calc" value="0"></div>
+        </div>
+        <label>أخرى غير نقدية</label>
+        <input type="number" step="0.001" min="0" name="other" inputmode="decimal" class="calc" value="0">
+
+        <label>النقدية الفعلية المُسلّمة (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="cash" inputmode="decimal" class="calc" required>
+
+        <div class="calcbox" id="shiftCalc">
+          <div><span>المتوقع</span><b id="calcExpected">0.000</b></div>
+          <div><span>الفرق</span><b id="calcVariance">0.000</b></div>
+        </div>
+
+        <label>ملاحظات (اختياري)</label>
+        <textarea name="notes" placeholder="أي شي تبي توضحه"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+    <!-- fuel form -->
+    <div class="card" data-panel="fuel" hidden>
+      <div class="card-head"><button class="back">→</button><b>قراءة الخزانات</b></div>
+      <form data-type="fuel">
+        <label>التاريخ</label><input type="date" name="date" required>
+        <label>المنتج</label>
+        <select name="product" required>
+          <option value="">اختر...</option>
+          <option>بنزين 91</option><option>بنزين 95</option><option>ديزل</option><option>بنزين 98</option>
+        </select>
+        <label>الكمية المتبقية (لتر)</label>
+        <input type="number" step="0.01" min="0" name="litres" inputmode="decimal" required>
+        <label>ملاحظات (اختياري)</label>
+        <textarea name="notes"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+    <!-- deposit form -->
+    <div class="card" data-panel="deposit" hidden>
+      <div class="card-head"><button class="back">→</button><b>إيداع بنكي</b></div>
+      <form data-type="deposit">
+        <label>تاريخ الإيداع الفعلي</label><input type="date" name="date" required>
+        <label>إجمالي المبلغ المودع (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="amount" inputmode="decimal" required>
+        <label>من ضمنها مبلغ غير نقدية الوردية؟ (اختياري)</label>
+        <input type="number" step="0.001" min="0" name="nonshift" inputmode="decimal" placeholder="مثلاً تحويل شركة أودعته مع النقدية">
+        <label>ملاحظات (اختياري)</label>
+        <textarea name="notes"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+    <!-- collection form -->
+    <div class="card" data-panel="collection" hidden>
+      <div class="card-head"><button class="back">→</button><b>دفعة مستلمة</b></div>
+      <form data-type="collection">
+        <label>التاريخ</label><input type="date" name="date" required>
+        <label>من</label>
+        <select name="company" required>
+          <option value="">اختر...</option>
+          <option>سالم</option><option>الخاطري</option><option>العربية (Arabian)</option>
+          <option>تحويل زبون على الجوال</option><option value="__other">غيره</option>
+        </select>
+        <input name="companyOther" placeholder="الاسم" hidden>
+        <label>المبلغ (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="amount" inputmode="decimal" required>
+        <label>استلمها</label>
+        <select name="into" required>
+          <option value="">اختر...</option>
+          <option>حساب محمود الشخصي</option><option>حساب الشركة</option><option>نقدًا</option>
+        </select>
+        <label>ملاحظات (اختياري)</label>
+        <textarea name="notes"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+    <!-- expense form -->
+    <div class="card" data-panel="expense" hidden>
+      <div class="card-head"><button class="back">→</button><b>مصروف</b></div>
+      <form data-type="expense">
+        <label>التاريخ</label><input type="date" name="date" required>
+        <label>النوع</label>
+        <select name="category" required>
+          <option value="">اختر...</option>
+          <option>كهرباء</option><option>صيانة</option><option>رواتب</option>
+          <option>تراخيص ورسوم حكومية</option><option>تأمين</option><option>نظافة</option>
+          <option>لوازم المحطة</option><option value="__other">غيره</option>
+        </select>
+        <input name="categoryOther" placeholder="نوع المصروف" hidden>
+        <label>المبلغ (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="amount" inputmode="decimal" required>
+        <label>دفعه</label>
+        <select name="paidby" required>
+          <option value="">اختر...</option>
+          <option>حساب الشركة</option><option>محمد شخصيًا</option><option>محمود شخصيًا</option><option>نقدية المحطة</option>
+        </select>
+        <label>ملاحظات (اختياري)</label>
+        <textarea name="notes"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+    <!-- clearing form -->
+    <div class="card" data-panel="clearing" hidden>
+      <div class="card-head"><button class="back">→</button><b>تحويل / دفع شخصي</b></div>
+      <form data-type="clearing">
+        <label>الشخص</label>
+        <select name="person" required>
+          <option value="">اختر...</option>
+          <option>محمد (مدير المحطة)</option><option>محمود</option>
+        </select>
+        <label>النوع</label>
+        <select name="ctype" required>
+          <option value="">اختر...</option>
+          <option>تحويل لحساب الشركة</option><option>دفع مصروف من جيبه الشخصي</option>
+          <option>استلم مبلغ لصالح المحطة</option><option>غيره</option>
+        </select>
+        <label>التاريخ</label><input type="date" name="date" required>
+        <label>المبلغ (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="amount" inputmode="decimal" required>
+        <label>ملاحظات</label>
+        <textarea name="notes" placeholder="مثلاً: أي فاتورة أو مصروف يخص هذا المبلغ"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+    <!-- corporate sale form -->
+    <div class="card" data-panel="sale" hidden>
+      <div class="card-head"><button class="back">→</button><b>بيع بالحساب</b></div>
+      <form data-type="sale">
+        <label>التاريخ</label><input type="date" name="date" required>
+        <label>الشركة</label>
+        <select name="company" required>
+          <option value="">اختر...</option>
+          <option>سالم</option><option>الخاطري</option><option>العربية (Arabian)</option>
+          <option value="__other">غيره</option>
+        </select>
+        <input name="companyOther" placeholder="اسم الشركة" hidden>
+        <label>الكمية (لتر)</label>
+        <input type="number" step="0.01" min="0" name="litres" inputmode="decimal" required>
+        <label>القيمة (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="amount" inputmode="decimal" required>
+        <label>ملاحظات (اختياري)</label>
+        <textarea name="notes"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+    <!-- oomco payment form -->
+    <div class="card" data-panel="oomco" hidden>
+      <div class="card-head"><button class="back">→</button><b>دفعة لعمان أويل</b></div>
+      <form data-type="oomco">
+        <label>رقم الفاتورة</label>
+        <input name="invoice" placeholder="مثلاً 90095277" required>
+        <label>تاريخ الدفع</label><input type="date" name="date" required>
+        <label>المبلغ المدفوع (ر.ع)</label>
+        <input type="number" step="0.001" min="0" name="amount" inputmode="decimal" required>
+        <label>ملاحظات (اختياري)</label>
+        <textarea name="notes"></textarea>
+        <button class="submit" type="submit">حفظ</button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- ================= DASHBOARD MODE ================= -->
+  <div id="dashMode" dir="ltr" lang="en" hidden>
+    <h1 style="margin-top:18px">Operations snapshot</h1>
+    <p class="sub">Live feed from Mohammed's entries. This is a quick operational read — the full reconciled P&amp;L, AR and control checks still live in the Excel model.</p>
+
+    <div class="stats">
+      <div class="stat"><span>Shift cash logged (7d)</span><b id="statShift">—</b></div>
+      <div class="stat"><span>Bank deposits (7d)</span><b id="statDeposit">—</b></div>
+      <div class="stat"><span>Collections received (7d)</span><b id="statCollection">—</b></div>
+      <div class="stat"><span>Expenses logged (7d)</span><b id="statExpense">—</b></div>
+      <div class="stat"><span>Corporate sales (7d)</span><b id="statSale">—</b></div>
+      <div class="stat wide"><span></span><div><span>Held by Mahmoud / Mohammed (all-time, logged)</span><b id="statClearing" style="font-size:18px">—</b></div></div>
+    </div>
+
+    <div class="sec-title">Recent activity</div>
+    <div class="feed" id="dashFeed"><div class="empty">No entries yet</div></div>
+
+    <div class="note">This app is the fast daily log, not the audit trail. Ask Claude to sync it into the Excel model on whatever cadence works for you — weekly is typical — so the full reconciliation stays current.</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var COLLECTIONS = {
+    shift:      {icon:'💵', ar:'نقدية وردية', en:'Shift cash'},
+    fuel:       {icon:'⛽', ar:'قراءة خزان', en:'Fuel reading'},
+    deposit:    {icon:'🏦', ar:'إيداع بنكي', en:'Bank deposit'},
+    collection: {icon:'🧾', ar:'دفعة مستلمة', en:'Collection'},
+    expense:    {icon:'📄', ar:'مصروف', en:'Expense'},
+    clearing:   {icon:'🔄', ar:'تحويل شخصي', en:'Clearing'},
+    sale:       {icon:'🏢', ar:'بيع بالحساب', en:'Corporate sale'},
+    oomco:      {icon:'🛢️', ar:'دفعة عمان أويل', en:'OOMCO payment'}
+  };
+
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function fmtOMR(n){ return (Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3}); }
+  function safeLS(get, key, fallback){
+    try{ var v = get ? localStorage.getItem(key) : null; return v===null ? fallback : v; }catch(e){ return fallback; }
+  }
+  function setLS(key, val){ try{ localStorage.setItem(key, val); }catch(e){} }
+
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+  }
+
+  // ---------- mode switch ----------
+  var entryBtn = document.getElementById('modeEntryBtn');
+  var dashBtn = document.getElementById('modeDashBtn');
+  var entryMode = document.getElementById('entryMode');
+  var dashMode = document.getElementById('dashMode');
+
+  function setMode(m){
+    var isEntry = m === 'entry';
+    entryMode.hidden = !isEntry;
+    dashMode.hidden = isEntry;
+    entryBtn.classList.toggle('on', isEntry);
+    dashBtn.classList.toggle('on', !isEntry);
+    setLS('kh_mode', m);
+    if(!isEntry) renderDashboard();
+  }
+  entryBtn.addEventListener('click', function(){ setMode('entry'); });
+  dashBtn.addEventListener('click', function(){ setMode('dash'); });
+  setMode(safeLS(true,'kh_mode','entry'));
+
+  // ---------- entry: panel nav ----------
+  var home = document.getElementById('entryHome');
+  var panels = Array.prototype.slice.call(document.querySelectorAll('[data-panel]'));
+  document.querySelectorAll('.tile').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      home.hidden = true;
+      panels.forEach(function(p){ p.hidden = p.dataset.panel !== btn.dataset.form; });
+    });
+  });
+  panels.forEach(function(p){
+    p.querySelector('.back').addEventListener('click', function(){
+      p.hidden = true; home.hidden = false;
+    });
+  });
+
+  // default dates to today
+  document.querySelectorAll('input[type="date"]').forEach(function(i){ i.value = todayISO(); });
+
+  // "other" free-text reveal
+  document.querySelectorAll('select').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      var otherInput = sel.parentElement.querySelector('input[name="'+sel.name+'Other"]');
+      if(!otherInput) return;
+      otherInput.hidden = sel.value !== '__other';
+      otherInput.required = sel.value === '__other';
+    });
+  });
+
+  // ---------- shift form: live expected vs actual ----------
+  var shiftForm = document.getElementById('shiftForm');
+  if(shiftForm){
+    var calcFields = shiftForm.querySelectorAll('.calc');
+    var expEl = document.getElementById('calcExpected');
+    var varEl = document.getElementById('calcVariance');
+    function num(name){ var v = shiftForm.elements[name]; return v ? (parseFloat(v.value) || 0) : 0; }
+    function updateCalc(){
+      var expected = num('gross') - num('visa') - num('digital') - num('corp') - num('mobile') - num('other');
+      var actual = num('cash');
+      var variance = actual - expected;
+      expEl.textContent = expected.toFixed(3);
+      varEl.textContent = (variance>=0?'+':'') + variance.toFixed(3);
+      varEl.className = Math.abs(variance) < 0.5 ? 'ok' : (variance < 0 ? 'short' : 'over');
+    }
+    calcFields.forEach(function(f){ f.addEventListener('input', updateCalc); });
+    updateCalc();
+  }
+
+  // ---------- who is entering (local convenience only) ----------
+  var who = safeLS(true, 'kh_who', '');
+  if(!who){
+    who = 'محمد';
+    setLS('kh_who', who);
+  }
+
+  // ---------- data layer: Google Sheets via Apps Script Web App ----------
+  // Paste the "Web app" URL from your Apps Script deployment here (Deploy > Manage deployments > Web app URL).
+  // Ends in /exec. See the setup guide for how to get this.
+  var API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+  function apiConfigured(){ return API_URL && API_URL.indexOf('https://script.google.com') === 0; }
+
+  async function apiPost(body){
+    // text/plain avoids a CORS preflight against Apps Script
+    var res = await fetch(API_URL, { method:'POST', body: JSON.stringify(body) });
+    return res.json();
+  }
+  async function apiGet(sheet){
+    var res = await fetch(API_URL + '?sheet=' + encodeURIComponent(sheet) + '&_=' + Date.now());
+    return res.json();
+  }
+
+  async function saveEntry(type, data){
+    data.by = who;
+    if(!apiConfigured()){
+      toast('التطبيق غير مُعدّ بعد — راجع دليل الإعداد');
+      return false;
+    }
+    try{
+      var r = await apiPost({ action:'add', sheet:'entries_' + type, data: data });
+      return !!(r && r.ok);
+    }catch(e){
+      toast('صار خطأ، جرّب مرة ثانية');
+      return false;
+    }
+  }
+
+  document.querySelectorAll('form[data-type]').forEach(function(form){
+    form.addEventListener('submit', async function(ev){
+      ev.preventDefault();
+      var type = form.dataset.type;
+      var fd = new FormData(form);
+      var data = {};
+      fd.forEach(function(v,k){
+        if(k.endsWith('Other')) return;
+        if(v === '__other'){
+          var alt = fd.get(k+'Other');
+          data[k] = alt || 'غيره';
+        } else {
+          data[k] = v;
+        }
+      });
+      var btn = form.querySelector('.submit');
+      btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
+      var ok = await saveEntry(type, data);
+      btn.disabled = false; btn.textContent = 'حفظ';
+      if(ok){
+        toast('تم الحفظ ✓');
+        form.reset();
+        document.querySelectorAll('input[type="date"]', form).forEach(function(i){ i.value = todayISO(); });
+        form.closest('.card').hidden = true;
+        home.hidden = false;
+        loadMineFeed();
+      }
+    });
+  });
+
+  // ---------- "my recent entries" (entry mode) ----------
+  async function loadMineFeed(){
+    var feed = document.getElementById('mineFeed');
+    if(!apiConfigured()){ return; }
+    var all = [];
+    for(var key in COLLECTIONS){
+      try{
+        var r = await apiGet('entries_' + key);
+        if(r && r.rows){
+          r.rows.forEach(function(v){ v._type = key; all.push(v); });
+        }
+      }catch(e){}
+    }
+    all.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+    all = all.slice(0,10);
+    if(!all.length){ feed.innerHTML = '<div class="empty">لسا ما سجّلت شي</div>'; return; }
+    feed.innerHTML = all.map(function(v){
+      var meta = COLLECTIONS[v._type];
+      var amt = v.cash || v.amount || v.litres || '';
+      var label = v.worker || v.product || v.company || v.category || v.person || v.invoice || '';
+      return '<div class="item">' +
+        '<div class="badge">'+meta.icon+'</div>' +
+        '<div class="mid"><div class="t1">'+meta.ar+(label?' — '+esc(label):'')+'</div>' +
+        '<div class="t2">'+esc(v.date||'')+'</div></div>' +
+        (amt ? '<div class="amt">'+fmtOMR(amt)+'</div>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  // ---------- dashboard ----------
+  var dashLoaded = false;
+  async function renderDashboard(){
+    var feed = document.getElementById('dashFeed');
+    if(!apiConfigured()){ feed.innerHTML = '<div class="empty">Not set up yet — see setup guide</div>'; return; }
+
+    var weekAgo = Date.now() - 7*24*3600*1000;
+    var all = [];
+    var sums = {shift:0, deposit:0, collection:0, expense:0, sale:0};
+    var clearingHeld = 0;
+
+    for(var key in COLLECTIONS){
+      try{
+        var r = await apiGet('entries_' + key);
+        if(!r || !r.rows) continue;
+        r.rows.forEach(function(v){
+          v._type = key;
+          all.push(v);
+          var amt = Number(v.cash || v.amount || 0);
+          if(v.ts && v.ts >= weekAgo && sums.hasOwnProperty(key)) sums[key] += amt;
+          if(key === 'clearing'){
+            if(v.ctype === 'تحويل لحساب الشركة') clearingHeld -= amt;
+            else clearingHeld += amt;
+          }
+        });
+      }catch(e){}
+    }
+
+    document.getElementById('statShift').textContent = fmtOMR(sums.shift);
+    document.getElementById('statDeposit').textContent = fmtOMR(sums.deposit);
+    document.getElementById('statCollection').textContent = fmtOMR(sums.collection);
+    document.getElementById('statExpense').textContent = fmtOMR(sums.expense);
+    document.getElementById('statSale').textContent = fmtOMR(sums.sale);
+    document.getElementById('statClearing').textContent = fmtOMR(clearingHeld) + ' OMR';
+
+    all.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+    all = all.slice(0,30);
+
+    if(!all.length){ feed.innerHTML = '<div class="empty">No entries yet</div>'; return; }
+    feed.innerHTML = all.map(function(v){
+      var meta = COLLECTIONS[v._type];
+      var amt = v.cash || v.amount || v.litres || '';
+      var label = v.worker || v.product || v.company || v.category || v.person || v.invoice || '';
+      return '<div class="item" data-type="'+v._type+'" data-id="'+v._id+'">' +
+        '<div class="badge">'+meta.icon+'</div>' +
+        '<div class="mid"><div class="t1">'+meta.en+(label?' · '+esc(label):'')+'</div>' +
+        '<div class="t2">'+esc(v.date||'')+' · '+esc(v.by||'')+'</div></div>' +
+        (amt ? '<div class="amt">'+fmtOMR(amt)+'</div>' : '') +
+        '<button class="del" title="Delete">✕</button>' +
+        '</div>';
+    }).join('');
+
+    feed.querySelectorAll('.del').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var item = btn.closest('.item');
+        var type = item.dataset.type, id = item.dataset.id;
+        try{
+          await apiPost({ action:'delete', sheet:'entries_' + type, id: id });
+          renderDashboard();
+        }catch(e){}
+      });
+    });
+    dashLoaded = true;
+  }
+
+  loadMineFeed();
+})();
+</script>
