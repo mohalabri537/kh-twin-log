@@ -1,0 +1,28 @@
+{
+  "fps": 30,
+  "overlap": 15,
+  "scenes": [
+    {"id": "intro", "len": 150},
+    {"id": "home", "len": 240},
+    {"id": "doctors", "len": 210},
+    {"id": "services", "len": 180},
+    {"id": "eeg", "len": 210},
+    {"id": "visit", "len": 180},
+    {"id": "booking", "len": 300},
+    {"id": "articles", "len": 180},
+    {"id": "language", "len": 180},
+    {"id": "end", "len": 180}
+  ],
+  "sfx": {
+    "intro": [[35, "swipe", 0.3]],
+    "home": [[0, "air", 0.2], [25, "swipe", 0.22], [165, "swipe", 0.22]],
+    "doctors": [[0, "air", 0.2], [20, "swipe", 0.22], [110, "swipe", 0.22]],
+    "services": [[0, "air", 0.2], [25, "swipe", 0.22], [100, "swipe", 0.22]],
+    "eeg": [[0, "air", 0.2], [110, "swipe", 0.22]],
+    "visit": [[0, "air", 0.2], [15, "swipe", 0.22], [90, "swipe", 0.22], [140, "tick", 0.4], [150, "tick", 0.4], [160, "tick", 0.4], [170, "tick", 0.4]],
+    "booking": [[0, "air", 0.2], [40, "tap", 0.55], [85, "tap", 0.55], [130, "tap", 0.55], [175, "tap", 0.55], [235, "tap", 0.55], [238, "send", 0.35], [248, "ding", 0.6]],
+    "articles": [[0, "air", 0.2], [95, "click", 0.6]],
+    "language": [[0, "air", 0.2], [55, "tap", 0.55], [115, "tap", 0.55]],
+    "end": [[0, "air", 0.2], [100, "pop", 0.35]]
+  }
+}

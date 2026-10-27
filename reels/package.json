@@ -6,14 +6,11 @@
   "scripts": {
     "studio": "remotion studio",
     "audio": "python3 audio/make_audio.py",
-    "capture": "node scripts/capture-site.js public/cap",
-    "render": "remotion render src/index.ts LaunchReel out/neuro-universe-launch-reel.mp4 --codec=h264 --crf=16 --audio-bitrate=320k",
-    "render:draft": "remotion render src/index.ts LaunchReelDraft out/draft.mp4"
+    "render": "remotion render src/index.ts LaunchReel out/neuro-universe-launch-reel.mp4 --codec=h264 --crf=17 --audio-bitrate=320k"
   },
   "dependencies": {
     "@remotion/cli": "4.0.539",
     "@remotion/fonts": "4.0.539",
-    "@remotion/motion-blur": "4.0.539",
     "@remotion/paths": "4.0.539",
     "react": "18.3.1",
     "react-dom": "18.3.1",

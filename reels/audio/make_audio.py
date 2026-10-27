@@ -1,13 +1,12 @@
 """Original soundtrack + sound effects for the launch reel, synthesised from scratch (numpy only).
 
-Calm, cinematic: 100 BPM, D minor (Dm - Bb - F - C), warm pads, soft piano, gentle pulse, deep soft hits.
-Arrangement follows the reel (36 s):
-  0-4.8 s     intro: piano and pad, swelling
-  4.8-18 s    section A: soft kick on 1 and 3, piano motif, pulse (doctors, booking)
-  18-22.8 s   breakdown: pad and piano only, heartbeat (EEG)
-  22.8-31.2 s section B: fuller, kick on every beat (first visit, desktop)
-  31.2-36 s   ending: logo boom at 32.4 s, final chord at 34.8 s, long tail
-Sound effects come from src/cues.json, the same list the video uses, so every tap/whoosh lands on its frame.
+Calm and warm: 90 BPM, D minor (Dm - Bb - F - C), pads, soft piano, a gentle pulse, a soft kick on 1 and 3.
+Arrangement follows the scenes in src/timeline.json (about 62 s):
+  intro       piano phrase over a slowly opening pad
+  tour        gentle groove with the piano motif (home, doctors, services, EEG, first visit)
+  booking on  slightly fuller (shaker, piano arpeggio)
+  ending      drums out, a warm chord blooms as the logo fills, long tail
+Sound effects come from src/timeline.json, the same list the video uses, so every tap and tick lands on its frame.
 
 Run:  python3 audio/make_audio.py   ->  public/audio/reel.wav
 """
@@ -15,10 +14,10 @@ import json, os, wave
 import numpy as np
 
 SR = 44100
-BPM = 100
+BPM = 90
 BEAT = 60 / BPM
 BAR = BEAT * 4
-DUR = 36.0
+DUR = 62.5
 N = int(SR * DUR)
 rng = np.random.default_rng(7)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -301,44 +300,36 @@ def heartbeat(t0, t1, gain=0.5):
         t += BAR / 2
 
 
-A0, A1 = 4.8, 18.0        # section A
-K0, K1 = 18.0, 22.8       # breakdown
-B0, B1 = 22.8, 31.2       # section B
-E0 = 31.2                 # ending
-LOGO, FINAL = 32.4, 34.8
+# timeline (seconds), taken from src/timeline.json so the music follows the scenes
+TL = json.load(open(os.path.join(ROOT, 'src', 'timeline.json')))
+_t, STARTS = 0, {}
+for _i, _s in enumerate(TL['scenes']):
+    STARTS[_s['id']] = _t / TL['fps']
+    _t += _s['len'] - (TL['overlap'] if _i < len(TL['scenes']) - 1 else 0)
+A0 = 2 * BAR                      # gentle groove starts after the intro phrase
+B0 = STARTS['booking']            # a little fuller for booking, articles and languages
+OUT0 = STARTS['end']              # drums out for the ending
+LOGO = OUT0 + 45 / TL['fps']      # the logo fills in
 
 # intro: a single piano phrase over a slowly opening pad
-wet(pad(PROG[0][1], 4.9, 700, 1.5), 0.0, 0.22, 0, 0.6)
-for tt, m in ((0.55, 62), (1.2, 69), (1.8, 74), (3.0, 72), (3.6, 69)):
-    wet(piano(m, 2.0, 0.8), tt, 0.3, 0.1, 0.8)
-put(music_L, music_R, sub(38, 4.6), 0.2, 0.25)
-swell(2.8, A0, 0.22)
+wet(pad(PROG[0][1], A0 + 0.5, 700, 1.8), 0.0, 0.22, 0, 0.6)
+for tt, m in ((0.6, 62), (1.5, 69), (2.3, 74), (3.6, 72), (4.4, 69)):
+    wet(piano(m, 2.4, 0.75), tt, 0.3, 0.1, 0.8)
+put(music_L, music_R, sub(38, A0), 0.2, 0.22)
+swell(A0 - 1.6, A0, 0.15)
 
-section(A0, A1, drums='half', pulse=True, motif=True)
-swell(16.8, K0, 0.2)
+section(A0, B0, drums='half', pulse=True, motif=True, pad_gain=0.2)
+section(B0, OUT0, drums='half', pulse=True, motif=True, shake=True, piano_arp=True, pad_gain=0.21)
 
-# breakdown: drums out, just pad, piano and a slow heartbeat
-for b, tb in bars(K0, K1):
-    root, voicing, pnotes = bar_chord(b)
-    wet(pad(voicing, BAR + 0.5, 900), tb, 0.26, 0, 0.7)
-    wet(sub(root, BAR), tb, 0.26, 0, 0)
-    for off, m in MOTIF[b % 4][:2]:
-        wet(piano(m, 2.2, 0.7), tb + off * BEAT, 0.3, 0.2, 0.9)
-heartbeat(K0, K1 - 0.6, 0.45)
-swell(21.0, B0, 0.26)
-
-section(B0, B1, drums='full', pulse=True, motif=True, shake=True, piano_arp=True, pad_gain=0.22)
-
-# ending: bloom on the logo, final chord on the tap
-wet(pad([50, 57, 62, 64, 69], LOGO - E0 + 0.2, 800, 0.3), E0, 0.2, 0, 0.6)
-for at, ch in ((LOGO, [50, 57, 62, 65, 69, 74]), (FINAL, [50, 57, 62, 64, 69, 76])):
-    wet(pad(ch, DUR - at + 0.5, 1400, 0.05), at, 0.26, 0, 0.8)
-    for i, m in enumerate(ch[2:]):
-        wet(piano(m, 3.0, 0.9), at + i * 0.03, 0.26, (-0.3, 0.3)[i % 2], 0.9)
-    put(music_L, music_R, kick(1, 0.9), at, 0.9)
-    wet(sub(38, DUR - at), at, 0.3, 0, 0)
-for tt in np.arange(LOGO + BEAT, FINAL, BEAT):
-    wet(felt(62 if int((tt - LOGO) / BEAT) % 2 else 69, 0.3), tt, 0.14, 0, 0.5)
+# ending: drums out, a warm chord blooms as the logo fills, long tail
+wet(pad([50, 57, 62, 64, 69], DUR - OUT0 + 0.3, 900, 1.0), OUT0, 0.2, 0, 0.7)
+wet(pad([50, 57, 62, 65, 69, 74], DUR - LOGO + 0.5, 1300, 0.6), LOGO, 0.22, 0, 0.8)
+for i, m in enumerate([62, 65, 69, 74]):
+    wet(piano(m, 4.0, 0.8), LOGO + i * 0.12, 0.28, (-0.3, 0.3)[i % 2], 0.9)
+put(music_L, music_R, kick(0.8, 0.9), LOGO, 0.6)
+wet(sub(38, DUR - LOGO), LOGO, 0.26, 0, 0)
+for k, tt in enumerate(np.arange(LOGO + 2 * BEAT, DUR - 1.5, BEAT)):
+    wet(felt([62, 69, 65, 69][k % 4], 0.3), tt, 0.12, 0, 0.5)
 
 # sidechain + big soft reverb
 music_L += duckable_L * duck
@@ -365,9 +356,9 @@ def sfx(kind, seed):
     if kind == 'flick':
         s = sweep_noise(0.16, 800, 6000, 0.5, seed)
         return s * np.sin(np.linspace(0, np.pi, len(s))) ** 2 * 0.7
-    if kind in ('whoosh', 'swipe', 'send'):
-        d = {'whoosh': 0.6, 'swipe': 0.5, 'send': 0.4}[kind]
-        f0, f1 = {'whoosh': (250, 2600), 'swipe': (250, 3500), 'send': (500, 5000)}[kind]
+    if kind in ('whoosh', 'swipe', 'send', 'air'):
+        d = {'whoosh': 0.6, 'swipe': 0.5, 'send': 0.4, 'air': 0.7}[kind]
+        f0, f1 = {'whoosh': (250, 2600), 'swipe': (300, 1800), 'send': (500, 5000), 'air': (400, 1600)}[kind]
         s = sweep_noise(d, f0, f1, 0.55, seed)
         e = np.sin(np.linspace(0, np.pi, len(s))) ** 1.5
         p = np.linspace(-0.8, 0.8, len(s))
@@ -421,20 +412,21 @@ def sfx(kind, seed):
     raise ValueError(kind)
 
 
-cues = json.load(open(os.path.join(ROOT, 'src', 'cues.json')))
 fx_L = np.zeros(N)
 fx_R = np.zeros(N)
-for i, c in enumerate(cues['sfx']):
-    s = sfx(c['t'], 100 + i)
-    at = c['f'] * cues.get('timeScale', 1) / cues['fps']
-    pan = 0.0
-    if s.ndim == 1:
-        put(fx_L, fx_R, s, at, c['g'], pan)
-    else:
-        j = int(at * SR)
-        n = min(s.shape[1], N - j)
-        fx_L[j:j + n] += s[0][:n] * c['g']
-        fx_R[j:j + n] += s[1][:n] * c['g']
+k = 0
+for scene, events in TL['sfx'].items():
+    for rel, kind, gain in events:
+        k += 1
+        snd = sfx(kind, 100 + k)
+        at = STARTS[scene] + rel / TL['fps']
+        if snd.ndim == 1:
+            put(fx_L, fx_R, snd, at, gain)
+        else:
+            j = int(at * SR)
+            n = min(snd.shape[1], N - j)
+            fx_L[j:j + n] += snd[0][:n] * gain
+            fx_R[j:j + n] += snd[1][:n] * gain
 fx_send = (fx_L + fx_R) * 0.5
 fx_L += fftconv(fx_send, irl)[:N] * 0.45
 fx_R += fftconv(fx_send, irr)[:N] * 0.45

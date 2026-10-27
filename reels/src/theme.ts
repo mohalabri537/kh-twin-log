@@ -23,7 +23,5 @@ export const C = {
 };
 
 export const FPS = 30;
-export const BEAT = 18; // 100 BPM
 export const W = 1080;
 export const H = 1920;
-export const TOTAL = 1080; // 36 s

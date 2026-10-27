@@ -1,48 +1,54 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame} from 'remotion';
-import {CameraMotionBlur} from '@remotion/motion-blur';
-import {S1Hook} from './scenes/S1Hook';
-import {S2Why} from './scenes/S2Why';
-import {S3Book} from './scenes/S3Book';
-import {S4Eeg} from './scenes/S4Eeg';
-import {S5Visit} from './scenes/S5Visit';
-import {S6Desk} from './scenes/S6Desk';
-import {S7End} from './scenes/S7End';
-import {beatBump, Grain} from './lib/fx';
-import {SLOW} from './lib/time';
+import {Booking, Doctors, Eeg, Home, Intro, Services, Visit} from './scenes/Tour';
+import {Articles, End, Language} from './scenes/Tour2';
+import {Grain} from './lib/fx';
+import {LightBg} from './lib/kit';
+import timeline from './timeline.json';
 
-// Scene boundaries on the authored beat grid (15 units = 1 beat); SLOW stretches them to 18 frames = 100 BPM.
-export const SCENES: [number, number, React.FC][] = [
-  [0, 120, S1Hook],
-  [120, 240, S2Why],
-  [240, 450, S3Book],
-  [450, 570, S4Eeg],
-  [570, 690, S5Visit],
-  [690, 780, S6Desk],
-  [780, 900, S7End],
-];
-
-export const Reel: React.FC<{blur?: number}> = ({blur = 5}) => {
-  const f = useCurrentFrame() / SLOW;
-  // pulse with the kick while the beat plays (drums drop out for the EEG breakdown)
-  const bump = beatBump(f, 120, 450) * beatBump(f, 570, 780);
-  return (
-    <AbsoluteFill style={{background: '#000'}}>
-      <AbsoluteFill style={{transform: `scale(${bump})`}}>
-        {SCENES.map(([from, to, S]) => (
-          <Sequence key={from} from={Math.round(from * SLOW)} durationInFrames={Math.round(to * SLOW) - Math.round(from * SLOW)}>
-            {blur > 1 ? (
-              <CameraMotionBlur samples={blur} shutterAngle={200}>
-                <S />
-              </CameraMotionBlur>
-            ) : (
-              <S />
-            )}
-          </Sequence>
-        ))}
-      </AbsoluteFill>
-      <Grain />
-      <Audio src={staticFile('audio/reel.wav')} />
-    </AbsoluteFill>
-  );
+const SCENES: Record<string, React.FC> = {
+  intro: Intro,
+  home: Home,
+  doctors: Doctors,
+  services: Services,
+  eeg: Eeg,
+  visit: Visit,
+  booking: Booking,
+  articles: Articles,
+  language: Language,
+  end: End,
 };
+
+// Scene start frames: each scene overlaps the previous one by `overlap` frames and dissolves in.
+export const starts = () => {
+  let t = 0;
+  return timeline.scenes.map((s, i) => {
+    const from = t;
+    t += s.len - (i < timeline.scenes.length - 1 ? timeline.overlap : 0);
+    return {...s, from};
+  });
+};
+export const TOTAL = starts().reduce((a, s) => Math.max(a, s.from + s.len), 0);
+
+const Dissolve: React.FC<{children: React.ReactNode; first: boolean}> = ({children, first}) => {
+  const f = useCurrentFrame();
+  return <AbsoluteFill style={{opacity: first ? 1 : Math.min(1, f / timeline.overlap)}}>{children}</AbsoluteFill>;
+};
+
+export const Reel: React.FC = () => (
+  <AbsoluteFill>
+    <LightBg />
+    {starts().map((s, i) => {
+      const S = SCENES[s.id];
+      return (
+        <Sequence key={s.id} from={s.from} durationInFrames={s.len}>
+          <Dissolve first={i === 0}>
+            <S />
+          </Dissolve>
+        </Sequence>
+      );
+    })}
+    <Grain />
+    <Audio src={staticFile('audio/reel.wav')} />
+  </AbsoluteFill>
+);

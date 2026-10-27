@@ -23,6 +23,7 @@ export type Shot = {
   press?: number; // 0..1 tap compression
   ripple?: number; // frames since last tap (or -1)
   header?: boolean;
+  headerSrc?: string; // page whose top bar is pinned while scrolling (defaults to src)
   children?: React.ReactNode; // overlays drawn in page coordinates
 };
 
@@ -57,7 +58,7 @@ export const PhoneCam: React.FC<Shot> = (s) => {
           height: SH + 2 * B,
           borderRadius: 120,
           background: 'linear-gradient(145deg,#2a2833,#0b0a10 40%,#1c1a24)',
-          boxShadow: `0 0 0 3px #3a3744, 0 80px 200px -30px rgba(116,49,244,.55), 0 30px 80px rgba(0,0,0,.7)`,
+          boxShadow: `0 0 0 3px #3a3744, 0 90px 160px -40px rgba(90,40,200,.35), 0 40px 80px -20px rgba(29,29,31,.35)`,
           position: 'relative',
         }}
       >
@@ -66,9 +67,9 @@ export const PhoneCam: React.FC<Shot> = (s) => {
           {s.children && (
             <div style={{position: 'absolute', left: 0, top: -scrollY * K, width: VW, transform: `scale(${K})`, transformOrigin: '0 0'}}>{s.children}</div>
           )}
-          {s.header !== false && scrollY > 4 && (
+          {s.header !== false && (scrollY > 4 || s.headerSrc) && (
             <div style={{position: 'absolute', left: 0, top: 0, width: SW, height: 60 * K, overflow: 'hidden', boxShadow: '0 1px 0 rgba(0,0,0,.08)'}}>
-              <Img src={staticFile(`cap/${s.src}`)} style={{position: 'absolute', left: 0, top: 0, width: SW}} />
+              <Img src={staticFile(`cap/${s.headerSrc ?? s.src}`)} style={{position: 'absolute', left: 0, top: 0, width: SW}} />
             </div>
           )}
           {/* glass sheen */}
@@ -105,7 +106,7 @@ export const PhoneCam: React.FC<Shot> = (s) => {
 
 const Finger: React.FC<{p: Pt; inv: number; press: number; ripple: number}> = ({p, inv, press, ripple}) => (
   <div style={{position: 'absolute', left: B + p.x, top: B + p.y, transform: `scale(${inv})`, transformOrigin: '0 0'}}>
-    {ripple >= 0 && ripple < 18 && (
+    {ripple >= 0 && ripple < 24 && (
       <div
         style={{
           position: 'absolute',
@@ -115,8 +116,8 @@ const Finger: React.FC<{p: Pt; inv: number; press: number; ripple: number}> = ({
           height: 120,
           borderRadius: '50%',
           border: `6px solid ${C.purple}`,
-          transform: `scale(${1 + ripple * 0.22})`,
-          opacity: 1 - ripple / 18,
+          transform: `scale(${1 + ripple * 0.12})`,
+          opacity: 1 - ripple / 24,
         }}
       />
     )}
