@@ -42,7 +42,7 @@ export const Caption: React.FC<{at: number; out: number; title: string; sub?: st
         {title}
       </div>
       {sub && (
-        <div dir={subLtr ? 'ltr' : 'rtl'} style={{fontFamily: subLtr ? EN : AR, fontWeight: 400, fontSize: 52, lineHeight: 1.4, color: C.purple, marginTop: 14, opacity: sin, transform: `translateY(${(1 - sin) * 20}px)`}}>
+        <div dir={subLtr ? 'ltr' : 'rtl'} style={{fontFamily: subLtr ? EN : AR, fontWeight: 300, fontSize: 52, lineHeight: 1.4, color: C.purple, marginTop: 14, opacity: sin, transform: `translateY(${(1 - sin) * 20}px)`}}>
           {sub}
         </div>
       )}

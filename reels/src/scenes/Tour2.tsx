@@ -96,7 +96,7 @@ export const End: React.FC = () => {
       <div style={{position: 'absolute', top: 925, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 400, fontSize: 40, color: '#55555C', letterSpacing: 1, ...appear(62)}}>
         Neuro Universe Clinic
       </div>
-      <div style={{position: 'absolute', top: 1070, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 600, fontSize: 76, color: C.purple, ...appear(78)}}>neurouniverse.om</div>
+      <div style={{position: 'absolute', top: 1070, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 76, color: C.purple, ...appear(78)}}>neurouniverse.om</div>
       <div style={{position: 'absolute', top: 1240, width: '100%', display: 'flex', justifyContent: 'center', opacity: clamp((f - 100) / 8, 0, 1)}}>
         <div dir="rtl" style={{transform: `scale(${btn})`, background: C.ink, color: '#fff', fontFamily: AR, fontWeight: 500, fontSize: 70, padding: '24px 90px', borderRadius: 999, boxShadow: '0 20px 50px rgba(29,29,31,.25)'}}>
           احجز الآن
