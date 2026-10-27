@@ -3,14 +3,17 @@ import {AbsoluteFill, Img, Sequence, staticFile, useCurrentFrame} from 'remotion
 import {clamp, pathAt} from '../lib/chase';
 import {PhoneCam} from '../lib/PhoneCam';
 import {BigWord, BlurX, ev, Kinetic, kf, tapState, TopFade, whip} from '../lib/kit';
+import {EegSweep, InfoChip, PortraitCard} from '../lib/breakouts';
 import {C, EN} from '../theme';
 
 // 4–12 s. Quick tour, one page per bar (4 beats): doctors, EEG, first visit, articles.
+// Each page has its own moment breaking out of the screen; pop sounds are in timeline.json.
 const LEN = 60;
 
-type Page = {big: string; title: string[]; sub: string; render: (f: number) => React.ReactNode};
+type Page = {big: string; title: string[]; sub: string; render: (f: number) => React.ReactNode; extra?: (f: number) => React.ReactNode};
 
-const phone = (f: number, src: string, pageH: number, focusY: [number, number][], header = true) => (
+// the phone leans one way on even pages and the other way on odd ones
+const phone = (f: number, i: number, src: string, pageH: number, focusY: [number, number][], header = true) => (
   <PhoneCam
     src={src}
     pageH={pageH}
@@ -19,19 +22,50 @@ const phone = (f: number, src: string, pageH: number, focusY: [number, number][]
     zoom={kf(f, [[0, 1.55], [LEN, 1.8]])}
     screenAt={{x: 540, y: 1300}}
     rx={4}
-    ry={kf(f, [[0, -9], [LEN, -3]])}
+    ry={kf(f, [[0, i % 2 ? 9 : -9], [LEN, i % 2 ? 3 : -3]])}
   />
 );
 
+const pop = (type: string, page: number) => ev('tour', type).filter((t) => t >= page * LEN && t < (page + 1) * LEN).map((t) => t - page * LEN);
+
 const PAGES: Page[] = [
-  {big: 'أطباؤنا', title: ['أطباء', 'استشاريون'], sub: 'في طب الأعصاب', render: (f) => phone(f, 'doctors.jpg', 4765, [[6, 422], [46, 720]])},
+  {
+    big: 'أطباؤنا',
+    title: ['أطباء', 'استشاريون'],
+    sub: 'في طب الأعصاب',
+    render: (f) => phone(f, 0, 'doctors.jpg', 4765, [[6, 422], [46, 720]]),
+    extra: (f) => {
+      const [a, b] = pop('pop', 0);
+      return (
+        <>
+          <PortraitCard f={f} at={a} src="img/haifa-800.webp" name="د. هيفاء العبرية" role="استشارية أولى · البورد الأمريكي" side={1} y={760} />
+          <PortraitCard f={f} at={b} src="img/said-800.webp" name="د. سعيد المعولي" role="استشاري · زمالة ملبورن" side={-1} y={1080} />
+        </>
+      );
+    },
+  },
   {
     big: 'الدماغ',
     title: ['تخطيط', 'الدماغ'],
     sub: 'فحص آمن وغير مؤلم',
-    render: (f) => phone(f, `eegscene/${String(Math.round(kf(f, [[4, 0], [50, 39]]))).padStart(3, '0')}.jpg`, 844, [[0, 422]], false),
+    render: (f) => phone(f, 1, `eegscene/${String(Math.round(kf(f, [[4, 0], [50, 39]]))).padStart(3, '0')}.jpg`, 844, [[0, 422]], false),
+    extra: (f) => <EegSweep f={f} from={pop('zap', 1)[0]} to={pop('zap', 1)[0] + 26} y={1240} />,
   },
-  {big: 'زيارتك', title: ['زيارتك', 'الأولى'], sub: 'السعر والمدة وما تُحضره', render: (f) => phone(f, 'visit.jpg', 4391, [[6, 422], [42, 830]])},
+  {
+    big: 'زيارتك',
+    title: ['زيارتك', 'الأولى'],
+    sub: 'السعر والمدة وما تُحضره',
+    render: (f) => phone(f, 2, 'visit.jpg', 4391, [[6, 422], [42, 830]]),
+    extra: (f) => {
+      const [a, b] = pop('pop', 2);
+      return (
+        <>
+          <InfoChip f={f} at={a} big="30 ر.ع." small="الاستشارة" x={40} y={860} rot={-6} />
+          <InfoChip f={f} at={b} big="30 دقيقة" small="مدة الاستشارة تقريبًا" x={520} y={1220} rot={5} />
+        </>
+      );
+    },
+  },
   {big: 'مقالات', title: ['مقالات', 'طبية'], sub: 'بالعربية، على الجوال والكمبيوتر', render: (f) => <Laptop f={f} />},
 ];
 
@@ -42,10 +76,13 @@ const PageShot: React.FC<{p: Page; i: number}> = ({p, i}) => {
     <AbsoluteFill>
       <BigWord t={p.big} f={f} len={LEN} />
       <BlurX id={`bx-tour-${i}`} amount={w.blur}>
-        <AbsoluteFill style={{transform: `translateX(${w.x}px) rotate(${w.rot}deg)`}}>{p.render(f)}</AbsoluteFill>
+        <AbsoluteFill style={{transform: `translateX(${w.x}px) rotate(${w.rot}deg)`}}>
+          {p.render(f)}
+          {p.extra?.(f)}
+        </AbsoluteFill>
       </BlurX>
       <TopFade o={1} to={560} />
-      <Kinetic words={p.title.map((t, k) => ({t, at: 4 + k * 4}))} sub={{t: p.sub, at: 14}} out={50} />
+      <Kinetic words={p.title.map((t, k) => ({t, at: 2 + k * 4}))} sub={{t: p.sub, at: 12}} out={50} />
     </AbsoluteFill>
   );
 };
@@ -64,7 +101,7 @@ export const Tour: React.FC = () => (
 const PW = 1440, PH = 900, BAR = 64;
 const Laptop: React.FC<{f: number}> = ({f}) => {
   const click = ev('tour', 'click')[0] - 3 * LEN; // this page starts at 3 bars in
-  const z = kf(f, [[0, 0.64], [LEN, 0.7]]);
+  const z = kf(f, [[0, 0.7], [LEN, 0.74]]);
   const p = pathAt([{f: 4, x: 1250, y: 260}, {f: click - 4, x: 720, y: 690}], f);
   const {press, ripple} = tapState(f, [click]);
   const swap = clamp((f - click - 2) / 6, 0, 1);

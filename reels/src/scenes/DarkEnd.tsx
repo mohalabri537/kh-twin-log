@@ -6,7 +6,7 @@ import {BlurX, DarkBg, ev, Kinetic, LightBg, tapState, TopFade, whip} from '../l
 import {LOGO_D, LOGO_VB} from '../logoPath';
 import {AR, C, EN} from '../theme';
 
-// 24–28 s. Arabic → English → dark mode. Tapping the theme button turns the whole reel dark.
+// 22–26 s. Arabic → English → dark mode. Tapping the theme button turns the whole reel dark.
 const FLIP_AT = {x: 540, y: 700};
 export const Dark: React.FC = () => {
   const f = useCurrentFrame();
@@ -43,10 +43,13 @@ export const Dark: React.FC = () => {
   );
 };
 
-// 28–34 s. The light comes back with the logo, then name, website and «احجز الآن» (tapped on the beat).
+// 26–31 s. The light comes back with the logo, then name, website and «احجز الآن» (tapped on the beat),
+// with a slow push-in and «الرابط في البايو» since links in a Reel aren't clickable.
 export const End: React.FC = () => {
   const f = useCurrentFrame();
   const tap = ev('end', 'tap')[0];
+  const btnAt = ev('end', 'pop')[0];
+  const bio = ev('end', 'pop')[1];
   const r = easeInOut(clamp(f / 14, 0, 1)) * 2300;
   const logo = easeOutBack(clamp((f - 2) / 16, 0, 1));
   const glow = hit(f, 0, 24);
@@ -54,7 +57,8 @@ export const End: React.FC = () => {
     const t = easeOut(clamp((f - at) / 12, 0, 1));
     return {opacity: t, transform: `translateY(${(1 - t) * 30}px)`};
   };
-  const btn = easeOutBack(clamp((f - 75) / 12, 0, 1));
+  const btn = easeOutBack(clamp((f - btnAt) / 12, 0, 1));
+  const shine = clamp((f - (tap + 10)) / 18, 0, 1);
   const {press, ripple} = tapState(f, [tap]);
   const fp = easeOut(clamp((f - (tap - 16)) / 13, 0, 1));
   return (
@@ -63,6 +67,7 @@ export const End: React.FC = () => {
       <AbsoluteFill style={{clipPath: f < 16 ? `circle(${r}px at 540px 760px)` : undefined}}>
         <LightBg />
       </AbsoluteFill>
+      <AbsoluteFill style={{transform: `scale(${1 + f * 0.0005})`}}>
       <svg
         viewBox={LOGO_VB}
         width={620}
@@ -77,17 +82,18 @@ export const End: React.FC = () => {
         </defs>
         <path d={LOGO_D} fill="url(#lg)" opacity={clamp((f - 2) / 5, 0, 1)} />
       </svg>
-      <div dir="rtl" style={{position: 'absolute', top: 830, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 700, fontSize: 96, color: C.ink, ...appear(30)}}>
+      <div dir="rtl" style={{position: 'absolute', top: 830, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 700, fontSize: 96, color: C.ink, ...appear(22)}}>
         طبّ وعلوم الأعصاب
       </div>
-      <div style={{position: 'absolute', top: 970, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 400, fontSize: 40, color: '#55555C', letterSpacing: 2, ...appear(36)}}>
+      <div style={{position: 'absolute', top: 970, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 400, fontSize: 40, color: '#55555C', letterSpacing: 2, ...appear(28)}}>
         NEURO UNIVERSE CLINIC
       </div>
-      <div style={{position: 'absolute', top: 1090, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 84, color: C.purple, ...appear(45)}}>neurouniverse.om</div>
-      {f >= 75 && (
+      <div style={{position: 'absolute', top: 1090, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 84, color: C.purple, ...appear(36)}}>neurouniverse.om</div>
+      {f >= btnAt && (
         <div style={{position: 'absolute', top: 1290, width: '100%', display: 'flex', justifyContent: 'center'}}>
-          <div dir="rtl" style={{transform: `scale(${btn * (1 - press * 0.08) * (1 + hit(f, tap, 12) * 0.06)})`, background: C.ink, color: '#fff', fontFamily: AR, fontWeight: 600, fontSize: 78, padding: '26px 100px', borderRadius: 999, boxShadow: `0 20px ${50 + hit(f, tap, 16) * 60}px rgba(116,49,244,${0.25 + hit(f, tap, 16) * 0.4})`}}>
+          <div dir="rtl" style={{transform: `scale(${btn * (1 - press * 0.08) * (1 + hit(f, tap, 12) * 0.06)})`, background: C.ink, color: '#fff', fontFamily: AR, fontWeight: 600, fontSize: 78, padding: '26px 100px', borderRadius: 999, boxShadow: `0 20px ${50 + hit(f, tap, 16) * 60}px rgba(116,49,244,${0.25 + hit(f, tap, 16) * 0.4})`, position: 'relative', overflow: 'hidden'}}>
             احجز الآن
+            {shine > 0 && shine < 1 && <div style={{position: 'absolute', top: -20, bottom: -20, width: 90, left: `${-20 + shine * 140}%`, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent)', transform: 'skewX(-20deg)'}} />}
           </div>
         </div>
       )}
@@ -97,6 +103,10 @@ export const End: React.FC = () => {
           <div style={{position: 'absolute', left: -44, top: -44, width: 88, height: 88, borderRadius: 44, background: 'radial-gradient(circle, rgba(255,255,255,.95), rgba(169,139,255,.6))', border: `4px solid ${C.purple}`, transform: `scale(${1 - press * 0.28})`, boxShadow: '0 8px 24px rgba(0,0,0,.25)'}} />
         </div>
       )}
+      <div dir="rtl" style={{position: 'absolute', top: 1480, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 400, fontSize: 46, color: '#55555C', ...appear(bio)}}>
+        الرابط في البايو ↑
+      </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

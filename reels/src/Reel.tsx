@@ -31,7 +31,7 @@ export const Reel: React.FC = () => {
   return (
     <AbsoluteFill>
       <LightBg pulse={pulse} />
-      <AbsoluteFill style={{transform: `scale(${1 + pulse * 0.008})`}}>
+      <AbsoluteFill style={{transform: `scale(${1 + pulse * 0.012})`}}>
         {sc.map((s) => {
           const S = SCENES[s.id];
           return (

@@ -4,5 +4,5 @@ import './theme';
 import {Reel, TOTAL} from './Reel';
 import {FPS, H, W} from './theme';
 
-// Instagram Reel: 1080x1920 (9:16), 30 fps, 34 s, 120 BPM.
+// Instagram Reel: 1080x1920 (9:16), 30 fps, 31 s, 120 BPM.
 export const RemotionRoot: React.FC = () => <Composition id="LaunchReel" component={Reel} durationInFrames={TOTAL} fps={FPS} width={W} height={H} />;

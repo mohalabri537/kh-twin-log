@@ -66,7 +66,7 @@ export const TopFade: React.FC<{o: number; dark?: boolean; to?: number}> = ({o, 
   );
 };
 
-// Bold caption that pops in word by word on the beat, with a light purple line under it.
+// Bold caption that pops in word by word on the beat, with a light purple line under it. A word '\n' breaks the line.
 export type W = {t: string; at: number};
 export const Kinetic: React.FC<{words: W[]; out: number; sub?: {t: string; at: number; ltr?: boolean}; top?: number; size?: number; dark?: boolean}> = ({
   words,
@@ -87,7 +87,9 @@ export const Kinetic: React.FC<{words: W[]; out: number; sub?: {t: string; at: n
     <div style={{position: 'absolute', top, left: 40, right: 40, opacity: 1 - leave, transform: `translateY(${-leave * 50}px)`}}>
       <div dir="rtl" style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0 26px'}}>
         {words.map((w, i) =>
-          f >= w.at ? (
+          w.t === '\n' ? (
+            <div key={i} style={{flexBasis: '100%', height: 0}} />
+          ) : f >= w.at ? (
             <span key={i} style={{display: 'inline-block', fontFamily: AR, fontWeight: 700, fontSize: size, lineHeight: 1.25, color: dark ? '#fff' : C.ink, ...pop(w.at)}}>
               {w.t}
             </span>

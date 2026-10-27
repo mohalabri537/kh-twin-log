@@ -286,6 +286,11 @@ def gap(t0, t1):
 
 H, T, B, D, E = (STARTS[k] for k in ('hook', 'tour', 'booking', 'dark', 'end'))
 
+
+def cue(scene, kind):
+    """Time (s) of the first cue of a kind in a scene."""
+    return STARTS[scene] + next(e[0] for e in TL['sfx'][scene] if e[1] == kind) / TL['fps']
+
 # hook: filtered chord opening up, pluck line rising, then a snare build into the drop
 cut = np.linspace(500, 2600, int(SR * (T - H)))
 put(duck_L, duck_R, supersaw(PROG[0][1], T - H, cut, attack=0.3), H, 0.2)
@@ -308,12 +313,12 @@ build(D - BAR, D - 0.1, 0.9)
 gap(D - 0.1, D)
 
 # dark: full groove, one beat of silence before the theme tap, then the bass drops an octave
-drop = D + TL['sfx']['dark'][2][0] / TL['fps']
+drop = cue('dark', 'drop')
 groove(D, drop - BEAT, hook_oct=1)
 groove(drop, E, hook_oct=1, bass_oct=-1)
 
 # end: logo hit, half-time groove, final chord on the button tap, tail
-final = E + TL['sfx']['end'][2][0] / TL['fps']
+final = cue('end', 'tap')
 groove(E, final, claps=True, hats=False, half=True, cut=2400)
 put(duck_L, duck_R, supersaw([50, 57, 62, 64, 69], final - E, 2800, 0.01, 0.4), E, 0.2)
 put(music_L, music_R, supersaw([62, 65, 69, 74, 76], DUR - final, 3500, 0.005, 1.2) * np.exp(-t_(DUR - final) * 0.6), final, 0.3)
@@ -348,6 +353,13 @@ def sfx(kind, seed, note=None):
         return s * 0.8
     if kind == 'crash':
         return crash()
+    if kind == 'zap':  # electric sweep for the brainwave drawing across the screen
+        d = 0.9
+        t = t_(d)
+        f = 300 * (6 ** (t / d))
+        mod = np.sin(2 * np.pi * f * 1.5 * t) * 3 * np.exp(-t * 2)
+        s = np.sin(2 * np.pi * np.cumsum(f) / SR + mod) * np.sin(np.pi * t / d) ** 0.8
+        return s * 0.5 + sweep_noise(d, 800, 6000, 0.5, seed) * np.sin(np.pi * t / d) * 0.25
     if kind in ('whip', 'swish'):
         d = 0.3 if kind == 'whip' else 0.4
         s = sweep_noise(d, 500, 7000 if kind == 'whip' else 3000, 0.5, seed)
