@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, Img, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Img, staticFile} from 'remotion';
+import {useF} from '../lib/time';
 import {chaseShot, clamp, easeInOut, hit} from '../lib/chase';
 import {Flash, Shade, Slam, Space} from '../lib/fx';
 import {EN} from '../theme';
@@ -10,30 +11,28 @@ const PW = 1440, PH = 900, BAR = 64; // page size (CSS px) and browser toolbar h
 const CLICK = 45; // abs 735
 
 export const S6Desk: React.FC = () => {
-  const f = useCurrentFrame(); // 0..90 (abs 690..780)
+  const f = useF(); // 0..90 (abs 690..780)
   const shot = chaseShot({
     f,
     keys: [
-      {f: 0, x: 1350, y: 90},
-      {f: 10, x: 1144, y: 620},
-      {f: 26, x: 296, y: 640},
+      {f: 0, x: 1250, y: 300},
+      {f: 18, x: 1144, y: 620},
       {f: 41, x: 720, y: 690},
       {f: 90, x: 720, y: 690},
     ],
     taps: [CLICK],
     zooms: [
-      {f: 0, z: 9},
-      {f: 8, z: 2.5},
-      {f: 26, z: 2.2},
-      {f: 41, z: 3.2},
-      {f: 47, z: 3.8},
+      {f: 0, z: 1.4},
+      {f: 12, z: 1.15},
+      {f: 30, z: 1.1},
+      {f: 45, z: 1.4},
       {f: 72, z: 0.68},
       {f: 90, z: 0.66},
     ],
-    follow: 0.2,
+    follow: 0.1,
   });
   const z = shot.zoom;
-  const w = clamp((z - 0.7) / (2 - 0.7), 0, 1); // centre the laptop when pulled back
+  const w = clamp((z - 0.7) / (1.6 - 0.7), 0, 1) * 0.8; // centre the laptop when pulled back
   const fx = PW / 2 + (shot.focus.x - PW / 2) * w;
   const fy = (PH + BAR) / 2 + (shot.focus.y + BAR - (PH + BAR) / 2) * w;
   const pull = easeInOut(clamp((f - 50) / 22, 0, 1));
@@ -90,7 +89,7 @@ export const S6Desk: React.FC = () => {
         ]}
         gap={0}
       />
-      <Flash at={[0]} len={6} max={0.6} />
+      <Flash at={[0]} len={6} max={0.3} />
     </AbsoluteFill>
   );
 };

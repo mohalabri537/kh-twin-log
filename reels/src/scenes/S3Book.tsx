@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill} from 'remotion';
+import {useF} from '../lib/time';
 import {chaseShot, clamp, easeOutBack, hit} from '../lib/chase';
 import {PhoneCam} from '../lib/PhoneCam';
 import {Flash, Shade, Slam, Space} from '../lib/fx';
@@ -17,7 +18,7 @@ const STATES = [
 ];
 
 export const S3Book: React.FC = () => {
-  const f = useCurrentFrame(); // 0..210 (abs 240..450)
+  const f = useF(); // 0..210 (abs 240..450)
   const stage = TAPS.slice(0, 4).filter((t) => f >= t + 1).length;
   const st = STATES[stage];
   const shot = chaseShot({
@@ -34,25 +35,24 @@ export const S3Book: React.FC = () => {
     ],
     taps: TAPS,
     zooms: [
-      {f: 0, z: 1.45},
-      {f: 13, z: 5.2},
-      {f: 28, z: 3.6},
-      {f: 45, z: 5.6},
-      {f: 58, z: 3.6},
-      {f: 75, z: 6},
-      {f: 88, z: 3.6},
-      {f: 105, z: 5.6},
-      {f: 126, z: 2.6},
-      {f: 148, z: 6.4},
-      {f: 156, z: 7},
-      {f: 172, z: 1.35},
-      {f: 210, z: 1.3},
+      {f: 0, z: 1.5},
+      {f: 13, z: 2.5},
+      {f: 30, z: 2.2},
+      {f: 45, z: 2.6},
+      {f: 60, z: 2.2},
+      {f: 75, z: 2.6},
+      {f: 90, z: 2.2},
+      {f: 105, z: 2.6},
+      {f: 126, z: 2.1},
+      {f: 150, z: 2.7},
+      {f: 172, z: 1.4},
+      {f: 210, z: 1.35},
     ],
-    follow: 0.22,
+    follow: 0.11,
     showTo: 160,
   });
   // tiny camera punch on every tap
-  const punch = TAPS.reduce((a, t) => a + hit(f, t, 8) * 0.08, 0);
+  const punch = TAPS.reduce((a, t) => a + hit(f, t, 8) * 0.03, 0);
   const back = clamp((f - 156) / 16, 0, 1);
   return (
     <AbsoluteFill>

@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, interpolate, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, interpolate} from 'remotion';
+import {useF} from '../lib/time';
 import {chaseShot, clamp, easeInOut, hit} from '../lib/chase';
 import {PhoneCam} from '../lib/PhoneCam';
 import {EegLines} from '../lib/Eeg';
@@ -8,7 +9,7 @@ import {Flash, Shade, Slam, Space} from '../lib/fx';
 // 0–4 s. A heartbeat of an EEG line spikes, cut to an extreme close-up of the purple logo;
 // a swipe makes it grow and open onto the EEG screen while the camera pulls back to the phone.
 export const S1Hook: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useF();
 
   if (f < 15) {
     // cold open: flat line with one blip, then a spike that tears the frame open
@@ -18,7 +19,7 @@ export const S1Hook: React.FC = () => {
         <div style={{position: 'absolute', left: 0, top: 960 - 60, transform: `scaleY(${1 + hit(f, 12, 4) * 6})`}}>
           <EegLines width={1080} channels={1} gap={120} progress={prog} main={0} amp={4 + (f > 10 ? 20 : 0)} />
         </div>
-        <Flash at={[13]} len={3} />
+        <Flash at={[13]} len={3} max={0.4} />
       </AbsoluteFill>
     );
   }
@@ -33,18 +34,18 @@ export const S1Hook: React.FC = () => {
       {f: 28, x: 190, y: 380},
     ],
     zooms: [
-      {f: 0, z: 9},
-      {f: 12, z: 6},
-      {f: 40, z: 3.4},
-      {f: 70, z: 2.6},
-      {f: 102, z: 1.3},
+      {f: 0, z: 3.4},
+      {f: 14, z: 2.9},
+      {f: 45, z: 2.3},
+      {f: 72, z: 1.9},
+      {f: 104, z: 1.25},
     ],
     focus: {x: 195, y: 620},
     showFrom: 4,
     showTo: 34,
   });
   const pull = clamp((r - 66) / 36, 0, 1);
-  const shake = hit(r, 30, 8) * 14 + hit(r, 45, 6) * 10 + hit(r, 60, 6) * 10;
+  const shake = 0;
   return (
     <AbsoluteFill>
       <Space />
@@ -68,8 +69,8 @@ export const S1Hook: React.FC = () => {
         ]}
         gap={0}
       />
-      <Flash at={[15]} len={6} />
-      <Flash at={[45, 60, 75]} len={4} max={0.25} color="#A98BFF" />
+      <Flash at={[15]} len={6} max={0.4} />
+      
     </AbsoluteFill>
   );
 };

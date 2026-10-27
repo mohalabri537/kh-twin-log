@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill} from 'remotion';
+import {useF} from '../lib/time';
 import {chaseShot, clamp, easeOutBack, hit} from '../lib/chase';
 import {PhoneCam} from '../lib/PhoneCam';
 import {Flash, Shade, Slam, Space} from '../lib/fx';
@@ -10,12 +11,11 @@ const TICKS = [75, 82, 89, 96]; // abs 645, 652, 659, 666
 const ITEMS = [2168, 2208, 2247, 2287];
 
 export const S5Visit: React.FC = () => {
-  const f = useCurrentFrame(); // 0..120 (abs 570..690)
+  const f = useF(); // 0..120 (abs 570..690)
   const shot = chaseShot({
     f,
     keys: [
-      {f: 0, x: 260, y: 130},
-      {f: 15, x: 250, y: 450},
+      {f: 0, x: 250, y: 420},
       {f: 30, x: 230, y: 575},
       {f: 45, x: 230, y: 760},
       {f: 62, x: 240, y: 2121},
@@ -24,17 +24,15 @@ export const S5Visit: React.FC = () => {
     ],
     taps: [30, 45, ...TICKS],
     zooms: [
-      {f: 0, z: 12},
-      {f: 8, z: 4.2},
-      {f: 30, z: 5.6},
-      {f: 45, z: 5.6},
-      {f: 56, z: 2.8},
-      {f: 72, z: 5.2},
-      {f: 100, z: 5.6},
-      {f: 108, z: 6},
-      {f: 120, z: 15},
+      {f: 0, z: 2.6},
+      {f: 10, z: 2.1},
+      {f: 30, z: 2.4},
+      {f: 45, z: 2.4},
+      {f: 58, z: 1.8},
+      {f: 74, z: 2.3},
+      {f: 120, z: 2.4},
     ],
-    follow: 0.2,
+    follow: 0.1,
   });
   return (
     <AbsoluteFill>
@@ -76,7 +74,7 @@ export const S5Visit: React.FC = () => {
       />
       <Chip f={f} at={30} out={58} big="30 ر.ع." small="الاستشارة" x={90} y={1380} rot={-6} />
       <Chip f={f} at={45} out={60} big="30 دقيقة" small="مدة الاستشارة" x={470} y={1580} rot={5} />
-      <Flash at={[0]} len={6} max={0.6} />
+      <Flash at={[0]} len={6} max={0.3} />
     </AbsoluteFill>
   );
 };

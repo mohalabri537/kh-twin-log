@@ -1,11 +1,12 @@
 """Original soundtrack + sound effects for the launch reel, synthesised from scratch (numpy only).
 
-120 BPM, D minor (Dm - Bb - F - C). Arrangement follows the reel:
-  0-4 s   hook: blip, spike, heartbeat, filtered arp rising, snare roll -> DROP at 4 s
-  4-15 s  groove A (doctors, booking)
-  15-19 s breakdown: brainwave lead, heartbeat, riser -> DROP at 19 s
-  19-26 s groove B with lead (first visit, desktop)
-  26-30 s ending: reverse swell, logo boom at 27 s, final stab at 29 s
+Calm, cinematic: 100 BPM, D minor (Dm - Bb - F - C), warm pads, soft piano, gentle pulse, deep soft hits.
+Arrangement follows the reel (36 s):
+  0-4.8 s     intro: piano and pad, swelling
+  4.8-18 s    section A: soft kick on 1 and 3, piano motif, pulse (doctors, booking)
+  18-22.8 s   breakdown: pad and piano only, heartbeat (EEG)
+  22.8-31.2 s section B: fuller, kick on every beat (first visit, desktop)
+  31.2-36 s   ending: logo boom at 32.4 s, final chord at 34.8 s, long tail
 Sound effects come from src/cues.json, the same list the video uses, so every tap/whoosh lands on its frame.
 
 Run:  python3 audio/make_audio.py   ->  public/audio/reel.wav
@@ -14,10 +15,10 @@ import json, os, wave
 import numpy as np
 
 SR = 44100
-BPM = 120
+BPM = 100
 BEAT = 60 / BPM
 BAR = BEAT * 4
-DUR = 30.0
+DUR = 36.0
 N = int(SR * DUR)
 rng = np.random.default_rng(7)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -128,90 +129,90 @@ def fftconv(x, h):
 
 # ---------------------------------------------------------------- instruments
 
-def kick(gain=1.0, punch=1.0, length=0.45):
+
+def kick(gain=1.0, length=0.6):
+    """Soft, deep kick: no click, just a round low thump."""
     t = t_(length)
-    f = 45 + 120 * np.exp(-t * 35) * punch
-    ph = 2 * np.pi * np.cumsum(f) / SR
-    body = np.sin(ph) * np.exp(-t * 7)
-    click = band_noise(0.01, 1500, 8000, seed=1) * np.exp(-np.arange(int(SR * 0.01)) / 60)
-    body[:len(click)] += click * 0.4
-    return np.tanh(body * 1.6) * gain
+    f = 38 + 70 * np.exp(-t * 28)
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 6)
+    return np.tanh(body * 1.3) * gain * np.minimum(1, t / 0.003)
 
 
-def clap(gain=1.0):
-    d = 0.3
-    n = band_noise(d, 900, 5000, seed=2)
-    t = t_(d)
-    e = np.zeros_like(t)
-    for o in (0, 0.011, 0.022):
-        e += np.where(t >= o, np.exp(-(t - o) * 90), 0)
-    e += np.where(t >= 0.03, np.exp(-(t - 0.03) * 14) * 0.6, 0)
+def snap(gain=1.0):
+    """Muted snap, low and filtered, for the backbeat."""
+    t = t_(0.22)
+    n = band_noise(0.22, 700, 3500, seed=2) * np.exp(-t * 22)
+    body = np.sin(2 * np.pi * 180 * t) * np.exp(-t * 35) * 0.4
+    return (n + body) * gain
+
+
+def shaker(gain=1.0, seed=5):
+    t = t_(0.08)
+    n = band_noise(0.08, 5000, 11000, seed=seed)
+    e = np.minimum(1, t / 0.01) * np.exp(-t * 45)
     return n * e * gain
 
 
-def snare(gain=1.0):
-    t = t_(0.25)
-    tone = np.sin(2 * np.pi * 190 * t) * np.exp(-t * 30)
-    n = band_noise(0.25, 1200, 9000, seed=4) * np.exp(-t * 18)
-    return (tone * 0.5 + n) * gain
-
-
-def hat(open_=False, gain=1.0, seed=5):
-    d = 0.25 if open_ else 0.05
-    t = t_(d)
-    n = band_noise(d, 7000, 16000, seed=seed)
-    return n * np.exp(-t * (12 if open_ else 90)) * gain
-
-
-def pluck(m, d=0.22, bright=1.0):
+def piano(m, d=1.8, vel=1.0):
+    """Soft piano-like tone: decaying harmonics, slightly stretched, gentle attack."""
     f = midi(m)
     t = t_(d)
-    cut = 600 + 5200 * bright * np.exp(-t * 18)
-    return osc_saw(f, d, cut, detune=0.004) * env(len(t), 0.002, 0.12, 0.0, 0.03, d)
+    out = np.zeros_like(t)
+    for h, a, dec in ((1, 1.0, 1.6), (2, 0.42, 2.6), (3, 0.18, 3.6), (4, 0.08, 5.0), (5, 0.04, 6.5)):
+        fh = f * h * (1 + 0.0004 * h * h)
+        out += a * np.sin(2 * np.pi * fh * t) * np.exp(-t * dec * (0.7 + vel * 0.3))
+    att = np.minimum(1, t / 0.006)
+    rel = np.clip((d - t) / 0.25, 0, 1)
+    return out * att * rel * vel * 0.5
 
 
-def pad(ms, d, cut=1800):
+def felt(m, d=0.3):
+    """Muted pluck for the pulse (low-passed, short)."""
+    f = midi(m)
+    t = t_(d)
+    s = np.sin(2 * np.pi * f * t) + 0.3 * np.sin(2 * np.pi * 2 * f * t) * np.exp(-t * 20)
+    return s * np.minimum(1, t / 0.004) * np.exp(-t * 9) * 0.5
+
+
+def pad(ms, d, cut=1100, attack=0.7):
     out = 0
     for m in ms:
-        out = out + osc_saw(midi(m), d, cut, detune=0.006)
+        out = out + osc_saw(midi(m), d, cut, detune=0.005) * 0.6 + 0.4 * np.sin(2 * np.pi * midi(m) * t_(d))
     n = int(SR * d)
-    e = np.minimum(1, np.arange(n) / (SR * 0.25)) * np.clip((d - np.arange(n) / SR) / 0.3, 0, 1)
+    x = np.arange(n) / SR
+    e = np.minimum(1, x / attack) * np.clip((d - x) / 0.6, 0, 1)
     return out * e / len(ms)
 
 
 def sub(m, d):
     t = t_(d)
-    s = np.sin(2 * np.pi * midi(m) * t) + 0.25 * np.sin(2 * np.pi * midi(m) * 2 * t + 0.3)
-    s += 0.15 * osc_saw(midi(m), d, 900)
-    return np.tanh(s * 1.4) * env(len(t), 0.004, 3, 0.9, 0.04, d)
+    s = np.sin(2 * np.pi * midi(m) * t)
+    return s * np.minimum(1, t / 0.08) * np.clip((d - t) / 0.15, 0, 1)
 
 
 # ---------------------------------------------------------------- arrangement
 
-PROG = [  # bar chords: root (bass), triad (pad), arp notes
-    (38, [62, 65, 69], [62, 65, 69, 74, 69, 65, 62, 69]),  # Dm
-    (34, [58, 62, 65], [58, 62, 65, 70, 65, 62, 58, 65]),  # Bb
-    (41, [60, 65, 69], [65, 69, 72, 77, 72, 69, 65, 72]),  # F
-    (36, [60, 64, 67], [60, 64, 67, 72, 67, 64, 60, 67]),  # C
+PROG = [  # bar chords: bass root, pad voicing (add9 colours), pulse notes
+    (38, [57, 62, 64, 65], [62, 69, 65, 69]),  # Dm(add9)
+    (34, [58, 62, 65, 72], [58, 65, 62, 65]),  # Bb(add9)
+    (41, [57, 60, 65, 67], [60, 65, 69, 65]),  # F(add9)
+    (36, [55, 60, 62, 67], [60, 67, 64, 67]),  # Csus2
 ]
-LEAD = [74, None, 72, 74, 77, None, 76, 74, 72, None, 69, 72, 74, None, None, None]  # 8ths over 1 bar pairs
-
-duck = np.ones(N)  # sidechain envelope driven by the kick
-
-
-def sidechain(at, depth=0.65, rel=0.22):
-    i = int(at * SR)
-    n = int(rel * SR)
-    if i >= N:
-        return
-    seg = 1 - depth * np.exp(-np.arange(min(n, N - i)) / (SR * rel / 4))
-    duck[i:i + len(seg)] = np.minimum(duck[i:i + len(seg)], seg)
-
+# piano motif (beat offset in bar, midi) — simple and singable
+MOTIF = [
+    [(0, 74), (1.5, 72), (2, 69), (3, 72)],
+    [(0, 70), (1.5, 69), (2, 65), (3, 69)],
+    [(0, 72), (1.5, 69), (2, 67), (3, 65)],
+    [(0, 67), (1.5, 69), (2, 72), (3, 76)],
+]
 
 music_L = np.zeros(N)
 music_R = np.zeros(N)
 duckable_L = np.zeros(N)
 duckable_R = np.zeros(N)
+verb_L = np.zeros(N)  # reverb send
+verb_R = np.zeros(N)
+duck = np.ones(N)
 
 
 def put(buf_l, buf_r, sig, at, gain=1.0, pan=0.0):
@@ -223,170 +224,150 @@ def put(buf_l, buf_r, sig, at, gain=1.0, pan=0.0):
     buf_r[i:i + n] += sig[:n] * gain * np.sqrt(0.5 * (1 + pan))
 
 
-def chord_at(t):
-    return PROG[int(t // BAR) % 4]
+def wet(sig, at, gain, pan=0.0, send=0.5):
+    put(duckable_L, duckable_R, sig, at, gain, pan)
+    put(verb_L, verb_R, sig, at, gain * send, pan)
 
 
-def groove(t0, t1, lead=False, intensity=1.0):
+def sidechain(at, depth=0.35, rel=0.3):
+    i = int(at * SR)
+    n = min(int(rel * SR), N - i)
+    if n <= 0:
+        return
+    seg = 1 - depth * np.exp(-np.arange(n) / (SR * rel / 4))
+    duck[i:i + n] = np.minimum(duck[i:i + n], seg)
+
+
+def bar_chord(b):
+    return PROG[b % 4]
+
+
+def bars(t0, t1):
+    b = int(round(t0 / BAR))
     t = t0
-    step = BEAT / 4
-    k = 0
     while t < t1 - 1e-6:
-        b16 = k % 16
-        root, triad, arp = chord_at(t)
-        if b16 % 4 == 0:
-            put(music_L, music_R, kick(1.0), t, 0.95)
-            sidechain(t)
-        if b16 in (4, 12):
-            put(music_L, music_R, clap(), t, 0.5 * intensity, 0.05)
-            put(music_L, music_R, snare(), t, 0.25 * intensity)
-        vel = [0.5, 0.25, 0.8, 0.3][b16 % 4]
-        if b16 % 4 == 2:
-            put(music_L, music_R, hat(True, seed=k), t, 0.16 * intensity, 0.3)
-        else:
-            put(music_L, music_R, hat(False, seed=k), t, 0.22 * vel * intensity, -0.25)
-        # rolling sub bass on 8ths, root/octave
-        if b16 % 2 == 0:
-            m = root + (12 if b16 % 8 == 6 else 0)
-            put(duckable_L, duckable_R, sub(m, step * 1.9), t, 0.42)
-        # arp
-        if b16 % 2 == 0:
-            put(duckable_L, duckable_R, pluck(arp[(b16 // 2) % 8], 0.2, 0.9), t, 0.2, (-0.4, 0.4)[(b16 // 2) % 2])
-        if lead and b16 % 2 == 0:
-            n8 = (int((t - t0) / (BEAT / 2))) % 16
-            m = LEAD[n8]
-            if m is not None:
-                f = midi(m)
-                d = BEAT / 2 * 0.95
-                tt = t_(d)
-                vib = 1 + 0.004 * np.sin(2 * np.pi * 5.5 * tt)
-                ph = 2 * np.pi * np.cumsum(f * vib) / SR
-                sq = np.tanh(np.sin(ph) * 2.2) * 0.6 + 0.4 * np.sin(2 * ph)
-                put(duckable_L, duckable_R, sq * env(len(tt), 0.01, 0.3, 0.5, 0.05, d), t, 0.11, 0.15)
-        t += step
-        k += 1
-    # pads per bar
-    b = t0
-    while b < t1 - 1e-6:
-        root, triad, arp = chord_at(b)
-        d = min(BAR, t1 - b)
-        put(duckable_L, duckable_R, pad(triad, d, 2200), b, 0.18, -0.2)
-        put(duckable_L, duckable_R, pad([x + 12 for x in triad], d, 3000), b, 0.07, 0.3)
-        b += BAR
+        yield b, t
+        b += 1
+        t += BAR
 
 
-def roll(t0, t1, gain=0.5):
-    """Snare roll that accelerates into a drop."""
-    t = t0
-    while t < t1:
-        k = (t - t0) / (t1 - t0)
-        put(music_L, music_R, snare(), t, gain * (0.35 + 0.65 * k))
-        t += BEAT / (2 if k < 0.4 else 4 if k < 0.75 else 8)
+def section(t0, t1, drums='half', pulse=True, motif=True, pad_gain=0.2, shake=False, piano_arp=False):
+    for b, tb in bars(t0, t1):
+        root, voicing, pnotes = bar_chord(b)
+        d = min(BAR, t1 - tb)
+        wet(pad(voicing, d + 0.4), tb, pad_gain, -0.15, 0.6)
+        wet(sub(root, d), tb, 0.32, 0, 0)
+        if motif:
+            for off, m in MOTIF[b % 4]:
+                if tb + off * BEAT < t1:
+                    wet(piano(m, 1.6, 0.85), tb + off * BEAT, 0.34, 0.15, 0.7)
+        if piano_arp:
+            for k in range(8):
+                tt = tb + k * BEAT / 2
+                if tt < t1:
+                    wet(piano(voicing[k % 4] + 12, 0.9, 0.45), tt, 0.16, (-0.35, 0.35)[k % 2], 0.6)
+        for k in range(8):
+            tt = tb + k * BEAT / 2
+            if tt >= t1:
+                break
+            if pulse:
+                wet(felt(pnotes[k % 4] - 12, 0.3), tt, 0.2, (-0.3, 0.3)[k % 2], 0.3)
+            beat = k / 2
+            if drums and k % 2 == 0:
+                if drums == 'full' or beat in (0, 2):
+                    put(music_L, music_R, kick(), tt, 0.85)
+                    sidechain(tt)
+                if (drums == 'full' and beat in (1, 3)) or (drums == 'half' and beat == 2):
+                    put(music_L, music_R, snap(), tt, 0.22, 0.05)
+                    put(verb_L, verb_R, snap(), tt, 0.1)
+            if shake:
+                put(music_L, music_R, shaker(seed=k + b * 8), tt, 0.07 * (1 if k % 2 else 0.6), 0.35)
 
 
-def riser(t0, t1, gain=0.35):
+def swell(t0, t1, gain=0.25):
+    """Soft rising air into a section change."""
     d = t1 - t0
-    s = sweep_noise(d, 400, 9000, 0.5, seed=11)
-    e = (np.arange(len(s)) / len(s)) ** 2.2
+    s = sweep_noise(d, 300, 5000, 0.6, seed=11)
+    e = (np.arange(len(s)) / len(s)) ** 2.5
     put(music_L, music_R, s * e, t0, gain)
-    # pitch riser
-    tt = t_(d)
-    f = 200 * (8 ** (tt / d))
-    put(music_L, music_R, np.sin(2 * np.pi * np.cumsum(f) / SR) * e * 0.4, t0, gain)
+    put(verb_L, verb_R, s * e, t0, gain * 0.5)
 
 
-def heartbeat(t0, t1, gain=0.7):
+def heartbeat(t0, t1, gain=0.5):
     t = t0
     while t < t1:
-        put(music_L, music_R, kick(1, 0.6, 0.3), t, gain)
-        put(music_L, music_R, kick(1, 0.5, 0.3), t + 0.16, gain * 0.6)
-        t += BEAT * 2
+        put(music_L, music_R, kick(1, 0.4), t, gain)
+        put(music_L, music_R, kick(1, 0.4), t + 0.22, gain * 0.55)
+        t += BAR / 2
 
 
-# hook 0-4 s
-put(duckable_L, duckable_R, pad([50, 57, 62], 3.6, 700), 0.45, 0.22)
-heartbeat(0.5, 3.0, 0.55)
-for i, tt in enumerate(np.arange(1.0, 4.0, BEAT / 4)):
-    root, triad, arp = PROG[0]
-    k = (tt - 1.0) / 3.0
-    put(duckable_L, duckable_R, pluck(arp[i % 8], 0.18, 0.15 + 0.85 * k), tt, 0.1 + 0.12 * k, (-0.4, 0.4)[i % 2])
-roll(2.5, 3.88, 0.85)
-for st in (3.0, 3.5, 3.75, 3.875 - 0.06):  # kicks speeding up into the drop
-    put(music_L, music_R, kick(1, 1.1, 0.35), st, 0.9)
-riser(2.0, 3.88, 0.7)
+A0, A1 = 4.8, 18.0        # section A
+K0, K1 = 18.0, 22.8       # breakdown
+B0, B1 = 22.8, 31.2       # section B
+E0 = 31.2                 # ending
+LOGO, FINAL = 32.4, 34.8
 
-# groove A 4-15 s (with a fill at the end)
-groove(4.0, 14.5)
-roll(14.5, 15.0, 0.4)
+# intro: a single piano phrase over a slowly opening pad
+wet(pad(PROG[0][1], 4.9, 700, 1.5), 0.0, 0.22, 0, 0.6)
+for tt, m in ((0.55, 62), (1.2, 69), (1.8, 74), (3.0, 72), (3.6, 69)):
+    wet(piano(m, 2.0, 0.8), tt, 0.3, 0.1, 0.8)
+put(music_L, music_R, sub(38, 4.6), 0.2, 0.25)
+swell(2.8, A0, 0.22)
 
-# breakdown 15-19 s: brainwave lead
-put(duckable_L, duckable_R, pad([50, 57, 62, 65], 4.0, 1200), 15.0, 0.36)
-heartbeat(15.0, 18.0, 0.9)
-for i, tt in enumerate(np.arange(15.0, 19.0, BEAT / 4)):  # muffled arp keeps the momentum, opening up into the drop
-    k = (tt - 15.0) / 4.0
-    put(music_L, music_R, pluck(PROG[0][2][i % 8], 0.16, 0.08 + 0.6 * k ** 2), tt, 0.12 + 0.1 * k, (-0.5, 0.5)[i % 2])
-for tt in np.arange(15.0, 19.0, BEAT / 2):  # pulsing sub
-    put(music_L, music_R, sub(38, BEAT / 2 * 0.9), tt, 0.3)
-bw_mel = [(15.0, 69, 0.75), (15.75, 72, 0.25), (16.0, 74, 1.0), (17.0, 77, 0.5), (17.5, 76, 0.5), (18.0, 74, 1.0)]
-for st, m, d in bw_mel:
-    tt = t_(d)
-    f = midi(m) * (1 + 0.012 * np.sin(2 * np.pi * 7 * tt))  # wobble like a trace
-    mod = np.sin(2 * np.pi * f * 2 * tt) * (2.5 * np.exp(-tt * 3) + 0.4)
-    s = np.sin(2 * np.pi * np.cumsum(f) / SR + mod) * env(len(tt), 0.01, 0.4, 0.6, 0.1, d)
-    put(music_L, music_R, s, st, 0.3, 0.2)
-    put(music_L, music_R, s, st + 0.375, 0.12, -0.5)  # echo
-for tt in np.arange(15.0, 19.0, BEAT / 2):
-    put(music_L, music_R, hat(False, seed=int(tt * 10)), tt, 0.12, 0.4)
-riser(16.5, 18.88, 0.7)
-roll(17.5, 18.88, 0.8)
-for st in (18.0, 18.25, 18.5, 18.625, 18.75):
-    put(music_L, music_R, kick(1, 1.1, 0.3), st, 0.9)
+section(A0, A1, drums='half', pulse=True, motif=True)
+swell(16.8, K0, 0.2)
 
-# groove B 19-26 s with lead
-groove(19.0, 26.0, lead=True)
+# breakdown: drums out, just pad, piano and a slow heartbeat
+for b, tb in bars(K0, K1):
+    root, voicing, pnotes = bar_chord(b)
+    wet(pad(voicing, BAR + 0.5, 900), tb, 0.26, 0, 0.7)
+    wet(sub(root, BAR), tb, 0.26, 0, 0)
+    for off, m in MOTIF[b % 4][:2]:
+        wet(piano(m, 2.2, 0.7), tb + off * BEAT, 0.3, 0.2, 0.9)
+heartbeat(K0, K1 - 0.6, 0.45)
+swell(21.0, B0, 0.26)
 
-# ending 26-30 s
-put(duckable_L, duckable_R, pad([50, 57, 62, 65, 69], 4.0, 1600), 26.0, 0.22)
-for st in (27.0, 28.0, 28.5, 29.0):
-    put(music_L, music_R, kick(1.0, 1.2, 0.6), st, 0.95)
-    sidechain(st, 0.5, 0.3)
-for st, ch in ((27.0, [62, 65, 69, 74]), (29.0, [62, 65, 69, 74, 77])):
-    stab = sum(osc_saw(midi(m), 1.0, 4000, 0.006) for m in ch) / len(ch) * env(int(SR * 1.0), 0.003, 0.35, 0.15, 0.3, 1.0)
-    put(music_L, music_R, stab, st, 0.32)
-    put(music_L, music_R, sub(38, 0.9), st, 0.45)
-for tt in np.arange(27.5, 29.0, BEAT / 4):
-    put(music_L, music_R, hat(False, seed=int(tt * 100)), tt, 0.09, 0.3)
+section(B0, B1, drums='full', pulse=True, motif=True, shake=True, piano_arp=True, pad_gain=0.22)
 
-# a split second of silence right before each drop makes it hit harder
-for g0 in (3.88, 18.88):
-    a, b = int(g0 * SR), int((g0 + 0.12) * SR)
-    for buf in (music_L, music_R, duckable_L, duckable_R):
-        buf[a:b] *= 0.04
+# ending: bloom on the logo, final chord on the tap
+wet(pad([50, 57, 62, 64, 69], LOGO - E0 + 0.2, 800, 0.3), E0, 0.2, 0, 0.6)
+for at, ch in ((LOGO, [50, 57, 62, 65, 69, 74]), (FINAL, [50, 57, 62, 64, 69, 76])):
+    wet(pad(ch, DUR - at + 0.5, 1400, 0.05), at, 0.26, 0, 0.8)
+    for i, m in enumerate(ch[2:]):
+        wet(piano(m, 3.0, 0.9), at + i * 0.03, 0.26, (-0.3, 0.3)[i % 2], 0.9)
+    put(music_L, music_R, kick(1, 0.9), at, 0.9)
+    wet(sub(38, DUR - at), at, 0.3, 0, 0)
+for tt in np.arange(LOGO + BEAT, FINAL, BEAT):
+    wet(felt(62 if int((tt - LOGO) / BEAT) % 2 else 69, 0.3), tt, 0.14, 0, 0.5)
 
-# apply sidechain, reverb send
+# sidechain + big soft reverb
 music_L += duckable_L * duck
 music_R += duckable_R * duck
-irl, irr = reverb_ir()
-send = (duckable_L + duckable_R) * duck * 0.5
-music_L += fftconv(send, irl)[:N] * 0.9
-music_R += fftconv(send, irr)[:N] * 0.9
+irl, irr = reverb_ir(2.8, 1.5)
+music_L += fftconv(verb_L, irl)[:N] * 1.1
+music_R += fftconv(verb_R, irr)[:N] * 1.1
 
 # ---------------------------------------------------------------- sound effects
 
 
 def sfx(kind, seed):
     if kind == 'tap':
-        t = t_(0.09)
-        blip = np.sin(2 * np.pi * (1900 * np.exp(-t * 18) + 700) * t) * np.exp(-t * 55)
-        thump = np.sin(2 * np.pi * 140 * t) * np.exp(-t * 40)
-        click = band_noise(0.09, 3000, 12000, seed) * np.exp(-t * 300)
-        return blip * 0.55 + thump * 0.7 + click * 0.5
+        t = t_(0.12)
+        blip = np.sin(2 * np.pi * 1180 * t) * np.exp(-t * 45)
+        thump = np.sin(2 * np.pi * 150 * t) * np.exp(-t * 35)
+        return blip * 0.4 + thump * 0.6
+    if kind == 'thud':
+        t = t_(0.9)
+        f = 34 + 40 * np.exp(-t * 12)
+        k = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 4) * np.minimum(1, t / 0.004)
+        air = band_noise(0.9, 300, 3000, seed) * np.exp(-t * 9) * 0.15
+        return k * 0.9 + air
     if kind == 'flick':
         s = sweep_noise(0.16, 800, 6000, 0.5, seed)
         return s * np.sin(np.linspace(0, np.pi, len(s))) ** 2 * 0.7
     if kind in ('whoosh', 'swipe', 'send'):
-        d = {'whoosh': 0.42, 'swipe': 0.36, 'send': 0.3}[kind]
-        f0, f1 = {'whoosh': (300, 5000), 'swipe': (250, 7000), 'send': (600, 9000)}[kind]
+        d = {'whoosh': 0.6, 'swipe': 0.5, 'send': 0.4}[kind]
+        f0, f1 = {'whoosh': (250, 2600), 'swipe': (250, 3500), 'send': (500, 5000)}[kind]
         s = sweep_noise(d, f0, f1, 0.55, seed)
         e = np.sin(np.linspace(0, np.pi, len(s))) ** 1.5
         p = np.linspace(-0.8, 0.8, len(s))
@@ -402,8 +383,8 @@ def sfx(kind, seed):
         t = t_(d)
         f = 28 + 90 * np.exp(-t * 6)
         s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * (2.6 if kind == 'impact' else 1.5))
-        n = band_noise(d, 200, 7000, seed) * np.exp(-t * (6 if kind == 'impact' else 3.5))
-        out = np.tanh(s * 2.2) * 0.9 + n * 0.45
+        n = band_noise(d, 150, 2500, seed) * np.exp(-t * (6 if kind == 'impact' else 3.5))
+        out = np.tanh(s * 1.6) * 0.9 + n * 0.2
         return out
     if kind == 'reverse':
         d = 0.95
@@ -445,7 +426,7 @@ fx_L = np.zeros(N)
 fx_R = np.zeros(N)
 for i, c in enumerate(cues['sfx']):
     s = sfx(c['t'], 100 + i)
-    at = c['f'] / cues['fps']
+    at = c['f'] * cues.get('timeScale', 1) / cues['fps']
     pan = 0.0
     if s.ndim == 1:
         put(fx_L, fx_R, s, at, c['g'], pan)
@@ -455,18 +436,18 @@ for i, c in enumerate(cues['sfx']):
         fx_L[j:j + n] += s[0][:n] * c['g']
         fx_R[j:j + n] += s[1][:n] * c['g']
 fx_send = (fx_L + fx_R) * 0.5
-fx_L += fftconv(fx_send, irl)[:N] * 0.35
-fx_R += fftconv(fx_send, irr)[:N] * 0.35
+fx_L += fftconv(fx_send, irl)[:N] * 0.45
+fx_R += fftconv(fx_send, irr)[:N] * 0.45
 
 # ---------------------------------------------------------------- master
-mix_L = music_L * 0.8 + fx_L * 0.9
-mix_R = music_R * 0.8 + fx_R * 0.9
+mix_L = music_L * 0.9 + fx_L * 0.7
+mix_R = music_R * 0.9 + fx_R * 0.7
 # fade the very end
-tail = np.clip((DUR - np.arange(N) / SR) / 0.6, 0, 1)
+tail = np.clip((DUR - np.arange(N) / SR) / 1.0, 0, 1)
 mix_L *= tail
 mix_R *= tail
 peak = max(np.max(np.abs(mix_L)), np.max(np.abs(mix_R)))
-drive = 1.6
+drive = 1.2
 mix_L = np.tanh(mix_L / peak * drive) / np.tanh(drive)
 mix_R = np.tanh(mix_R / peak * drive) / np.tanh(drive)
 mix = np.stack([mix_L, mix_R], 1) * 0.93

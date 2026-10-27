@@ -54,11 +54,11 @@ export const hit = (f: number, at: number, len = 10) => (f < at ? 0 : Math.exp(-
 
 // Everything a chase shot needs at frame f: pointer, trailing camera, tilt from speed, tap press/ripple.
 export const chaseShot = (o: {f: number; keys: Key[]; zooms: ZKey[]; taps?: number[]; follow?: number; focus?: Pt; showFrom?: number; showTo?: number}) => {
-  const {f, keys, zooms, taps = [], follow = 0.16} = o;
+  const {f, keys, zooms, taps = [], follow = 0.1} = o;
   const p = pathAt(keys, f);
   const {c, v} = chaseAt(keys, f, follow);
   const zoom = zoomAt(zooms, f);
-  const trail = [5, 4, 3, 2, 1].map((d) => pathAt(keys, f - d));
+  const trail = [3, 2, 1].map((d) => pathAt(keys, f - d));
   let press = 0, ripple = -1;
   for (const t of taps) {
     const d = f - t;
@@ -73,8 +73,8 @@ export const chaseShot = (o: {f: number; keys: Key[]; zooms: ZKey[]; taps?: numb
     trail: show ? trail : [],
     press,
     ripple,
-    rot: clamp(v.x * 0.1, -7, 7),
-    rx: clamp(-v.y * 0.045, -14, 14),
-    ry: clamp(v.x * 0.07, -14, 14),
+    rot: clamp(v.x * 0.04, -2.5, 2.5),
+    rx: clamp(-v.y * 0.02, -5, 5),
+    ry: clamp(v.x * 0.03, -5, 5),
   };
 };

@@ -9,8 +9,9 @@ import {S5Visit} from './scenes/S5Visit';
 import {S6Desk} from './scenes/S6Desk';
 import {S7End} from './scenes/S7End';
 import {beatBump, Grain} from './lib/fx';
+import {SLOW} from './lib/time';
 
-// Scene boundaries on the beat grid (15 frames = 1 beat at 120 BPM).
+// Scene boundaries on the authored beat grid (15 units = 1 beat); SLOW stretches them to 18 frames = 100 BPM.
 export const SCENES: [number, number, React.FC][] = [
   [0, 120, S1Hook],
   [120, 240, S2Why],
@@ -22,14 +23,14 @@ export const SCENES: [number, number, React.FC][] = [
 ];
 
 export const Reel: React.FC<{blur?: number}> = ({blur = 5}) => {
-  const f = useCurrentFrame();
+  const f = useCurrentFrame() / SLOW;
   // pulse with the kick while the beat plays (drums drop out for the EEG breakdown)
   const bump = beatBump(f, 120, 450) * beatBump(f, 570, 780);
   return (
     <AbsoluteFill style={{background: '#000'}}>
       <AbsoluteFill style={{transform: `scale(${bump})`}}>
         {SCENES.map(([from, to, S]) => (
-          <Sequence key={from} from={from} durationInFrames={to - from}>
+          <Sequence key={from} from={Math.round(from * SLOW)} durationInFrames={Math.round(to * SLOW) - Math.round(from * SLOW)}>
             {blur > 1 ? (
               <CameraMotionBlur samples={blur} shutterAngle={200}>
                 <S />

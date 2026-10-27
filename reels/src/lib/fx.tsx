@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, interpolate, random, useCurrentFrame} from 'remotion';
 import {AR, C} from '../theme';
+import {useF} from './time';
 import {clamp, easeOutBack, hit} from './chase';
 
 // Deep purple space behind the phone: the site's own gradient glows (--g1/--g2/--g3), drifting.
@@ -36,7 +37,7 @@ export const Grain: React.FC = () => {
 
 // White flash on a cut.
 export const Flash: React.FC<{at: number[]; color?: string; len?: number; max?: number}> = ({at, color = '#fff', len = 8, max = 0.9}) => {
-  const f = useCurrentFrame();
+  const f = useF();
   const o = Math.max(0, ...at.map((a) => (f >= a && f < a + len ? (1 - (f - a) / len) * max : 0)));
   return o > 0 ? <AbsoluteFill style={{background: color, opacity: o, mixBlendMode: 'screen'}} /> : null;
 };
@@ -55,17 +56,17 @@ export type Word = {t: string; at: number; out?: number; size?: number; weight?:
 
 // Kinetic Arabic type: each word slams in (scale + blur + RGB split), holds, and blurs out upward.
 export const Slam: React.FC<{words: Word[]; y: number; gap?: number}> = ({words, y, gap = 10}) => {
-  const f = useCurrentFrame();
+  const f = useF();
   return (
     <div style={{position: 'absolute', left: 40, right: 40, top: y, display: 'flex', flexDirection: 'column', alignItems: 'center', gap}}>
       {words.map((w, i) => {
-        const t = clamp((f - w.at) / 9, 0, 1);
+        const t = clamp((f - w.at) / 11, 0, 1);
         if (f < w.at) return <div key={i} style={{height: (w.size ?? 120) * 1.25}} />;
         const out = w.out !== undefined ? clamp((f - w.out) / 7, 0, 1) : 0;
-        const s = interpolate(easeOutBack(t), [0, 1], [2.4, 1]);
+        const s = interpolate(easeOutBack(t), [0, 1], [1.6, 1]);
         const blur = (1 - t) * 24 + out * 30;
-        const split = hit(f, w.at, 12) * 14;
-        const shake = hit(f, w.at, 8) * 10;
+        const split = hit(f, w.at, 10) * 5;
+        const shake = hit(f, w.at, 8) * 3;
         return (
           <div
             key={i}
@@ -94,4 +95,4 @@ export const Slam: React.FC<{words: Word[]; y: number; gap?: number}> = ({words,
 
 // Small punch-zoom on every beat while the groove is playing.
 export const beatBump = (f: number, from: number, to: number, beat = 15) =>
-  f < from || f >= to ? 1 : 1 + 0.018 * Math.exp(-((f - from) % beat) / 3);
+  f < from || f >= to ? 1 : 1 + 0.008 * Math.exp(-((f - from) % beat) / 3);

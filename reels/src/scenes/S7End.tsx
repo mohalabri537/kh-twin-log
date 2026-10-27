@@ -1,6 +1,7 @@
 import React from 'react';
-import {AbsoluteFill, random, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, random} from 'remotion';
 import {evolvePath} from '@remotion/paths';
+import {useF} from '../lib/time';
 import {clamp, easeInOut, easeOutBack, hit} from '../lib/chase';
 import {Flash, Space} from '../lib/fx';
 import {LOGO_D, LOGO_VB} from '../logoPath';
@@ -11,11 +12,11 @@ const IGNITE = 30, URL_AT = 44, BTN = 75, TAP = 90;
 const URL = 'neurouniverse.om';
 
 export const S7End: React.FC = () => {
-  const f = useCurrentFrame(); // 0..120 (abs 780..900)
+  const f = useF(); // 0..120 (abs 780..900)
   const draw = easeInOut(clamp(f / 28, 0, 1));
   const {strokeDasharray, strokeDashoffset} = evolvePath(draw, LOGO_D);
   const fill = clamp((f - IGNITE) / 6, 0, 1);
-  const shake = hit(f, IGNITE, 10) * 22 + hit(f, TAP, 8) * 12;
+  const shake = hit(f, IGNITE, 10) * 5;
   const sx = Math.sin(f * 2.3) * shake, sy = Math.cos(f * 1.9) * shake;
   const push = 1 + f * 0.0009;
   const typed = clamp(Math.floor((f - URL_AT) / 2) + 1, 0, URL.length);
@@ -98,9 +99,9 @@ export const S7End: React.FC = () => {
           />
         )}
       </AbsoluteFill>
-      <Flash at={[0]} len={8} />
-      <Flash at={[IGNITE]} len={10} color={C.purpleLight} max={0.7} />
-      <Flash at={[TAP]} len={8} max={0.5} />
+      <Flash at={[0]} len={8} max={0.35} />
+      <Flash at={[IGNITE]} len={10} color={C.purpleLight} max={0.35} />
+      <Flash at={[TAP]} len={8} max={0.2} />
     </AbsoluteFill>
   );
 };

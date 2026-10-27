@@ -71,8 +71,6 @@ export const PhoneCam: React.FC<Shot> = (s) => {
               <Img src={staticFile(`cap/${s.src}`)} style={{position: 'absolute', left: 0, top: 0, width: SW}} />
             </div>
           )}
-          {/* dynamic island */}
-          <div style={{position: 'absolute', top: 22, left: SW / 2 - 110, width: 220, height: 64, borderRadius: 40, background: '#000'}} />
           {/* glass sheen */}
           <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(115deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 32%)', pointerEvents: 'none'}} />
         </div>

@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, interpolate, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, interpolate} from 'remotion';
+import {useF} from '../lib/time';
 import {chaseShot, clamp, easeInOut, easeOutBack, hit, lerp} from '../lib/chase';
 import {PhoneCam} from '../lib/PhoneCam';
 import {EegLines} from '../lib/Eeg';
@@ -11,17 +12,17 @@ import {AR, C} from '../theme';
 const WORLD = 2600, CH = 9, GAP = 150, MAIN = 4;
 
 export const S4Eeg: React.FC = () => {
-  const f = useCurrentFrame(); // 0..120 (abs 450..570)
+  const f = useF(); // 0..120 (abs 450..570)
   if (f < 45) return <Giant f={f} />;
   if (f < 75) {
     const r = f - 45;
     const idx = Math.round(interpolate(r, [0, 28], [0, 39], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}));
-    const z = lerp(9, 1.7, easeInOut(clamp(r / 12, 0, 1))) + r * 0.012;
+    const z = lerp(2.6, 1.7, easeInOut(clamp(r / 14, 0, 1))) + r * 0.008;
     return (
       <AbsoluteFill>
         <Space />
-        <PhoneCam src={`eegscene/${String(idx).padStart(3, '0')}.jpg`} pageH={844} header={false} focus={{x: 195, y: 422}} zoom={z} rx={8} ry={-14 + r * 0.6} rot={-3} />
-        <Flash at={[0]} len={6} />
+        <PhoneCam src={`eegscene/${String(idx).padStart(3, '0')}.jpg`} pageH={844} header={false} focus={{x: 195, y: 422}} zoom={z} rx={6} ry={-8 + r * 0.3} rot={-2} />
+        <Flash at={[0]} len={6} max={0.3} />
       </AbsoluteFill>
     );
   }
@@ -36,15 +37,12 @@ export const S4Eeg: React.FC = () => {
     ],
     taps: [15, 30],
     zooms: [
-      {f: 0, z: 10},
-      {f: 7, z: 4.6},
-      {f: 15, z: 5.6},
-      {f: 22, z: 4.2},
-      {f: 30, z: 5.8},
-      {f: 38, z: 5},
-      {f: 45, z: 14},
+      {f: 0, z: 2.6},
+      {f: 10, z: 2.2},
+      {f: 22, z: 2.4},
+      {f: 45, z: 2.5},
     ],
-    follow: 0.22,
+    follow: 0.1,
   });
   return (
     <AbsoluteFill>
@@ -62,10 +60,10 @@ const Giant: React.FC<{f: number}> = ({f}) => {
   const pen = easeInOut(prog) * WORLD;
   // camera rides the pen tip close up, then pulls back to show every channel
   const pull = easeInOut(clamp((f - 22) / 20, 0, 1));
-  const zoom = lerp(3.2, 0.42, pull);
+  const zoom = lerp(1.5, 0.42, pull);
   const cx = lerp(pen - 120, WORLD * 0.62, pull);
   const cy = lerp(MAIN * GAP + GAP / 2, (CH * GAP) / 2, pull);
-  const shake = hit(f, 0, 10) * 18;
+  const shake = 0;
   return (
     <AbsoluteFill style={{background: '#030208'}}>
       <AbsoluteFill style={{background: 'radial-gradient(circle at 50% 50%, rgba(116,49,244,.45), transparent 60%)'}} />
@@ -91,7 +89,7 @@ const Giant: React.FC<{f: number}> = ({f}) => {
       <div dir="rtl" style={{position: 'absolute', top: 260, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 200, fontSize: 46, color: 'rgba(255,255,255,.75)', opacity: clamp((f - 28) / 8, 0, 1), transform: `scale(${easeOutBack(clamp((f - 28) / 10, 0, 1))})`}}>
         من 20 إلى 60 دقيقة · بلا ألم
       </div>
-      <Flash at={[0]} len={8} />
+      <Flash at={[0]} len={8} max={0.35} />
     </AbsoluteFill>
   );
 };
