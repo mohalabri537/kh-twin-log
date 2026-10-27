@@ -1,54 +1,48 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame} from 'remotion';
-import {Booking, Doctors, Eeg, Home, Intro, Services, Visit} from './scenes/Tour';
-import {Articles, End, Language} from './scenes/Tour2';
+import {Hook} from './scenes/Hook';
+import {Tour} from './scenes/Tour';
+import {Booking} from './scenes/Booking';
+import {Dark, End} from './scenes/DarkEnd';
 import {Grain} from './lib/fx';
-import {LightBg} from './lib/kit';
+import {kick, LightBg} from './lib/kit';
 import timeline from './timeline.json';
 
-const SCENES: Record<string, React.FC> = {
-  intro: Intro,
-  home: Home,
-  doctors: Doctors,
-  services: Services,
-  eeg: Eeg,
-  visit: Visit,
-  booking: Booking,
-  articles: Articles,
-  language: Language,
-  end: End,
-};
+const SCENES: Record<string, React.FC> = {hook: Hook, tour: Tour, booking: Booking, dark: Dark, end: End};
 
-// Scene start frames: each scene overlaps the previous one by `overlap` frames and dissolves in.
+// Scene start frames on the 120 BPM grid (15 frames per beat).
 export const starts = () => {
   let t = 0;
-  return timeline.scenes.map((s, i) => {
+  return timeline.scenes.map((s) => {
     const from = t;
-    t += s.len - (i < timeline.scenes.length - 1 ? timeline.overlap : 0);
+    t += s.len;
     return {...s, from};
   });
 };
 export const TOTAL = starts().reduce((a, s) => Math.max(a, s.from + s.len), 0);
 
-const Dissolve: React.FC<{children: React.ReactNode; first: boolean}> = ({children, first}) => {
+export const Reel: React.FC = () => {
   const f = useCurrentFrame();
-  return <AbsoluteFill style={{opacity: first ? 1 : Math.min(1, f / timeline.overlap)}}>{children}</AbsoluteFill>;
+  const sc = starts();
+  const at = (id: string) => sc.find((s) => s.id === id)!.from;
+  // the groove runs from the first drop until the logo; everything breathes with the kick
+  const grooving = f >= at('tour') && f < at('end');
+  const pulse = grooving ? kick(f) : 0;
+  return (
+    <AbsoluteFill>
+      <LightBg pulse={pulse} />
+      <AbsoluteFill style={{transform: `scale(${1 + pulse * 0.008})`}}>
+        {sc.map((s) => {
+          const S = SCENES[s.id];
+          return (
+            <Sequence key={s.id} from={s.from} durationInFrames={s.len}>
+              <S />
+            </Sequence>
+          );
+        })}
+      </AbsoluteFill>
+      <Grain />
+      <Audio src={staticFile('audio/reel.wav')} />
+    </AbsoluteFill>
+  );
 };
-
-export const Reel: React.FC = () => (
-  <AbsoluteFill>
-    <LightBg />
-    {starts().map((s, i) => {
-      const S = SCENES[s.id];
-      return (
-        <Sequence key={s.id} from={s.from} durationInFrames={s.len}>
-          <Dissolve first={i === 0}>
-            <S />
-          </Dissolve>
-        </Sequence>
-      );
-    })}
-    <Grain />
-    <Audio src={staticFile('audio/reel.wav')} />
-  </AbsoluteFill>
-);

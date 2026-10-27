@@ -1,10 +1,12 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {AR, C, EN} from '../theme';
-import {clamp, easeInOut, easeOut, lerp, Pt} from './chase';
+import {clamp, easeInOut, easeOut, easeOutBack, lerp} from './chase';
 import timeline from '../timeline.json';
 
-// Light, calm building blocks for the website tour.
+// Shared building blocks: light background, kinetic captions, whip transitions, beat helpers.
+
+export const BEAT = 15; // frames per beat at 120 BPM
 
 // Value along [frame, value] keys, eased between each pair; holds before/after.
 export const kf = (f: number, keys: [number, number][]) => {
@@ -16,69 +18,142 @@ export const kf = (f: number, keys: [number, number][]) => {
   return keys[keys.length - 1][1];
 };
 
-// The site's own light background: off-white with soft lilac and pink glows (site.css --g1/--g2/--g3).
-export const LightBg: React.FC = () => {
+// Frames of a sound cue in a scene: taps, clicks etc. are driven by the same list as the audio.
+export const ev = (scene: string, type: string) =>
+  ((timeline.sfx as unknown as Record<string, [number, string, number, number?][]>)[scene] ?? []).filter((e) => e[1] === type).map((e) => e[0]);
+
+// Tap press curve (0..1) and frames since the last tap.
+export const tapState = (f: number, taps: number[]) => {
+  let press = 0, ripple = -1;
+  for (const t of taps) {
+    const d = f - t;
+    if (d >= -3 && d <= 6) press = Math.max(press, d < 0 ? (d + 3) / 3 : 1 - d / 6);
+    if (d >= 0) ripple = d;
+  }
+  return {press, ripple: ripple > 20 ? -1 : ripple};
+};
+
+// The site's light background: off-white with lilac and pink glows that pulse gently on the kick.
+export const LightBg: React.FC<{pulse?: number}> = ({pulse = 0}) => {
   const f = useCurrentFrame();
-  const a = Math.sin(f / 120) * 80, b = Math.cos(f / 150) * 90;
+  const a = Math.sin(f / 60) * 120, b = Math.cos(f / 75) * 130;
   return (
     <AbsoluteFill style={{background: '#F5F5F7', overflow: 'hidden'}}>
-      <div style={{position: 'absolute', left: -380 + a, top: -260, width: 1300, height: 1300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(132,92,255,.30), transparent 62%)'}} />
+      <div style={{position: 'absolute', left: -380 + a, top: -260, width: 1300, height: 1300, borderRadius: '50%', background: `radial-gradient(circle, rgba(132,92,255,${0.3 + pulse * 0.12}), transparent 62%)`}} />
       <div style={{position: 'absolute', right: -420 - b, top: 300, width: 1200, height: 1200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(239,190,230,.55), transparent 62%)'}} />
-      <div style={{position: 'absolute', left: -200 + b, bottom: -500, width: 1400, height: 1400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,166,255,.38), transparent 62%)'}} />
+      <div style={{position: 'absolute', left: -200 + b, bottom: -500, width: 1400, height: 1400, borderRadius: '50%', background: `radial-gradient(circle, rgba(184,166,255,${0.38 + pulse * 0.1}), transparent 62%)`}} />
     </AbsoluteFill>
   );
 };
 
-// Two-line caption above the phone: big, dark, high contrast, held long enough to read.
-export const Caption: React.FC<{at: number; out: number; title: string; sub?: string; subLtr?: boolean; top?: number}> = ({at, out, title, sub, subLtr, top = 215}) => {
+// Dark-mode background (site.css dark theme).
+export const DarkBg: React.FC = () => {
   const f = useCurrentFrame();
-  if (f < at || f > out + 16) return null;
-  const tin = easeOut(clamp((f - at) / 18, 0, 1));
-  const sin = easeOut(clamp((f - at - 8) / 18, 0, 1));
-  const o = 1 - clamp((f - out) / 16, 0, 1);
+  const a = Math.sin(f / 60) * 120;
   return (
-    <div style={{position: 'absolute', top, left: 50, right: 50, textAlign: 'center', opacity: o}}>
-      <div dir="rtl" style={{fontFamily: AR, fontWeight: 600, fontSize: 88, lineHeight: 1.3, color: C.ink, opacity: tin, transform: `translateY(${(1 - tin) * 26}px)`}}>
-        {title}
+    <AbsoluteFill style={{background: '#000', overflow: 'hidden'}}>
+      <div style={{position: 'absolute', left: -380 + a, top: -200, width: 1300, height: 1300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(116,49,244,.5), transparent 62%)'}} />
+      <div style={{position: 'absolute', right: -400 - a, bottom: -300, width: 1300, height: 1300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(160,64,190,.3), transparent 62%)'}} />
+    </AbsoluteFill>
+  );
+};
+
+// Soft wash behind the captions so they stay readable when the phone pushes in.
+export const TopFade: React.FC<{o: number; dark?: boolean; to?: number}> = ({o, dark, to = 640}) => {
+  const c = dark ? '0,0,0' : '245,245,247';
+  return (
+    <div style={{position: 'absolute', left: 0, right: 0, top: 0, height: to, opacity: o, background: `linear-gradient(180deg, rgba(${c},1) 0%, rgba(${c},.98) 74%, rgba(${c},0) 100%)`}} />
+  );
+};
+
+// Bold caption that pops in word by word on the beat, with a light purple line under it.
+export type W = {t: string; at: number};
+export const Kinetic: React.FC<{words: W[]; out: number; sub?: {t: string; at: number; ltr?: boolean}; top?: number; size?: number; dark?: boolean}> = ({
+  words,
+  out,
+  sub,
+  top = 190,
+  size = 116,
+  dark,
+}) => {
+  const f = useCurrentFrame();
+  if (f < words[0].at || f > out + 10) return null;
+  const leave = easeInOut(clamp((f - out) / 9, 0, 1));
+  const pop = (at: number) => {
+    const t = clamp((f - at) / 9, 0, 1);
+    return {opacity: clamp((f - at) / 4, 0, 1), transform: `scale(${lerp(1.35, 1, easeOutBack(t))})`, filter: `blur(${(1 - easeOut(t)) * 10}px)`};
+  };
+  return (
+    <div style={{position: 'absolute', top, left: 40, right: 40, opacity: 1 - leave, transform: `translateY(${-leave * 50}px)`}}>
+      <div dir="rtl" style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0 26px'}}>
+        {words.map((w, i) =>
+          f >= w.at ? (
+            <span key={i} style={{display: 'inline-block', fontFamily: AR, fontWeight: 700, fontSize: size, lineHeight: 1.25, color: dark ? '#fff' : C.ink, ...pop(w.at)}}>
+              {w.t}
+            </span>
+          ) : (
+            <span key={i} style={{display: 'inline-block', fontFamily: AR, fontWeight: 700, fontSize: size, lineHeight: 1.25, opacity: 0}}>
+              {w.t}
+            </span>
+          ),
+        )}
       </div>
-      {sub && (
-        <div dir={subLtr ? 'ltr' : 'rtl'} style={{fontFamily: subLtr ? EN : AR, fontWeight: 300, fontSize: 52, lineHeight: 1.4, color: C.purple, marginTop: 14, opacity: sin, transform: `translateY(${(1 - sin) * 20}px)`}}>
-          {sub}
+      {sub && f >= sub.at && (
+        <div dir={sub.ltr ? 'ltr' : 'rtl'} style={{textAlign: 'center', fontFamily: sub.ltr ? EN : AR, fontWeight: 300, fontSize: 58, color: dark ? C.purpleLight : C.purple, marginTop: 8, ...pop(sub.at)}}>
+          {sub.t}
         </div>
       )}
     </div>
   );
 };
 
-// Standard phone placement: below the caption, upright with a slight turn.
-export const PHONE = {zoom: 1.6, screenAt: {x: 540, y: 1300}};
-export const sway = (f: number) => ({rx: 3 + Math.sin(f / 95) * 1.5, ry: -5 + Math.sin(f / 80) * 2.5, rot: 0});
-
-// Finger dragging up the screen while the page scrolls (scroll moves are [start, end] frame pairs).
-export const swipeFinger = (f: number, moves: [number, number][], scrollY: number): {p: Pt | null; trail: Pt[]} => {
-  for (const [a, b] of moves) {
-    if (f >= a - 8 && f <= b + 6) {
-      const t = easeInOut(clamp((f - a) / (b - a), 0, 1));
-      const show = clamp((f - (a - 8)) / 8, 0, 1) * (1 - clamp((f - b) / 6, 0, 1));
-      if (show <= 0.05) return {p: null, trail: []};
-      const vy = lerp(640, 300, t);
-      return {p: {x: 250, y: scrollY + vy}, trail: []};
+// Whip transition: slides in from the right over `inLen` frames, out to the left over the last `outLen`.
+export const whip = (f: number, len: number, inLen = 8, outLen = 8, dist = 1400) => {
+  const x = (g: number) => {
+    if (inLen > 0 && g < inLen) return dist * (1 - easeOut(clamp(g / inLen, 0, 1)));
+    if (outLen > 0 && g > len - outLen) {
+      const t = clamp((g - (len - outLen)) / outLen, 0, 1);
+      return -dist * t * t * t;
     }
-  }
-  return {p: null, trail: []};
+    return 0;
+  };
+  const v = x(f) - x(f - 1);
+  return {x: x(f), blur: Math.min(60, Math.abs(v) * 0.35), rot: clamp(v * 0.02, -8, 8)};
 };
 
-// Tap press curve for the finger (0..1) and frames since the last tap.
-export const tapState = (f: number, taps: number[]) => {
-  let press = 0, ripple = -1;
-  for (const t of taps) {
-    const d = f - t;
-    if (d >= -4 && d <= 8) press = Math.max(press, d < 0 ? (d + 4) / 4 : 1 - d / 8);
-    if (d >= 0) ripple = d;
-  }
-  return {press, ripple: ripple > 24 ? -1 : ripple};
-};
+// Horizontal motion blur (SVG filter), so whips streak like a real camera pan.
+export const BlurX: React.FC<{id: string; amount: number; children: React.ReactNode}> = ({id, amount, children}) => (
+  <AbsoluteFill style={{filter: amount > 0.5 ? `url(#${id})` : undefined}}>
+    <svg width="0" height="0" style={{position: 'absolute'}}>
+      <filter id={id} x="-20%" y="0" width="140%" height="100%">
+        <feGaussianBlur stdDeviation={`${amount} 0`} />
+      </filter>
+    </svg>
+    {children}
+  </AbsoluteFill>
+);
 
-// Frames of a sound cue in a scene: taps, ticks and clicks are driven by the same list as the audio.
-export const ev = (scene: string, type: string) =>
-  ((timeline.sfx as unknown as Record<string, [number, string, number][]>)[scene] ?? []).filter((e) => e[1] === type).map((e) => e[0]);
+// Giant faint word drifting behind the phone.
+export const BigWord: React.FC<{t: string; f: number; len: number}> = ({t, f, len}) => (
+  <div
+    dir="rtl"
+    style={{
+      position: 'absolute',
+      top: 820,
+      left: -400,
+      right: -400,
+      textAlign: 'center',
+      fontFamily: AR,
+      fontWeight: 700,
+      fontSize: 420,
+      color: 'rgba(116,49,244,.07)',
+      whiteSpace: 'nowrap',
+      transform: `translateX(${lerp(260, -260, f / len)}px)`,
+    }}
+  >
+    {t}
+  </div>
+);
+
+// Kick pulse (1 → 0 after each beat) for small beat-synced bumps.
+export const kick = (f: number) => Math.exp(-((f % BEAT) / 3));
