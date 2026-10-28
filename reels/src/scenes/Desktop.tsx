@@ -71,7 +71,7 @@ export const Desktop: React.FC = () => {
           <Width box={box} chrome={chrome} w={w} f={f} o={clamp(f / 10, 0, 1) * (1 - clamp((f - phone) / 8, 0, 1))} at={narrow} />
         </AbsoluteFill>
       </BlurX>
-      <Kinetic words={[{t: 'على', at: 4}, {t: 'كل', at: 9}, {t: 'الشاشات', at: 14}]} sub={{t: 'من الكمبيوتر إلى الجوال', at: 26}} out={LEN - 14} top={200} size={116} />
+      <Kinetic words={[{t: 'على', at: 4}, {t: 'كل', at: 9}, {t: 'الشاشات', at: 14}]} sub={{t: 'من الكمبيوتر إلى الهاتف', at: 26}} out={LEN - 14} top={200} size={116} />
     </AbsoluteFill>
   );
 };
