@@ -34,7 +34,9 @@ the ElevenLabs flow holds every take). `audio/make_audio.py` mixes them to the t
   A take that builds into a drop instead gets its drop placed on the last booking tap (17 s, the WhatsApp send),
   its quiet build lifted, and a peak that runs past the logo hit cut there into the score's ringing tail;
 - each chime is re-pitched from its measured pitch so the steps climb in the score's key (D);
-- the score ducks a few dB under each effect where it is loud.
+- the score ducks a few dB under each effect where it is loud;
+- the tone settings (how far chimes are pitched, how much the harsh highs are tamed, loudness) are named at the
+  top of `audio/make_audio.py`, with the values that sounded too sharp (v9) and too dull (v10) beside them.
 
 Every sound in the mix is an ElevenLabs take; `make_audio.py` stops with an error if a cue has none. Only if
 `public/audio/eleven/` is empty does it fall back to synthesising everything itself.

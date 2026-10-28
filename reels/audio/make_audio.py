@@ -30,6 +30,14 @@ N = int(SR * DUR)
 rng = np.random.default_rng(7)
 ELEVEN = os.path.join(ROOT, 'public', 'audio', 'eleven')
 
+# Tone of the mix. v9 was sharp, v10 dull; these sit between the two (v9 / v10 values in brackets).
+PITCH_CAP = 5     # semitones a chime may be pitched above its take (v9 9 / v10 2)
+FX_EQ = 0.35       # depth of the effects' de-harsh EQ, 1 = -4 dB at 3 kHz and -6 dB air (v9 0 / v10 1)
+TAME_OVER = 7     # dB a harsh-band spike must exceed its surroundings before it is turned down (v9 off / v10 5)
+TAME_RATIO = 2    # how hard it is turned down then (v10 3)
+DRIVE = 1.2       # master saturation (v9 1.3 / v10 1.15)
+LOUDNESS = -12.6  # target for the integrated loudness estimate; measures about -13.5 LUFS (v9 -13.2 / v10 -13.9)
+
 
 def load_audio(path):
     """Decode any audio file to stereo float arrays at SR (needs ffmpeg)."""
@@ -468,9 +476,9 @@ def sfx(kind, seed, note=None):
         if note and kind in ('blip', 'tap', 'star'):
             # re-pitch from the take's measured pitch, so every step lands on its note in the
             # score's key; one octave per kind keeps the climb climbing, chosen so the highest
-            # note is never more than 2 semitones above the take (pitching up makes them shrill)
+            # note is at most PITCH_CAP semitones above the take (pitching far up makes them shrill)
             base = take_pitch(x)
-            base += 12 * np.ceil((max(chime_notes(kind)) - 2 - base) / 12)
+            base += 12 * np.ceil((max(chime_notes(kind)) - PITCH_CAP - base) / 12)
             r = 2 ** ((note - base) / 12)
             n = int(x.shape[1] / r)
             src = np.arange(n) * r
@@ -588,7 +596,7 @@ def soften(x):
     """Take the edge off the effects: about -4 dB around 3 kHz, where the ear hears harshness,
     easing into -6 dB in the air above 10 kHz. Linear phase, applied to the whole bus."""
     f = np.maximum(np.fft.rfftfreq(len(x), 1 / SR), 1)
-    db = -3 * np.exp(-np.log2(f / 3200) ** 2 / 0.72) - 6 / (1 + (7000 / f) ** 2)
+    db = FX_EQ * (-3 * np.exp(-np.log2(f / 3200) ** 2 / 0.72) - 6 / (1 + (7000 / f) ** 2))
     return np.fft.irfft(np.fft.rfft(x) * 10 ** (db / 20), len(x))
 
 
@@ -626,8 +634,8 @@ mix_R *= tail
 
 def tame(l, r):
     """Dynamic EQ (de-esser style) on the whole mix: whenever the 2.5-8 kHz band spikes more than
-    5 dB over its level in the surrounding second (claps, clicks, taps), turn just that band down
-    3:1, with an instant attack and an 80 ms release. Transients stop stabbing; steady brightness stays."""
+    TAME_OVER dB over its level in the surrounding second (claps, clicks, taps), turn just that band
+    down TAME_RATIO:1, instant attack, 80 ms release. Only the stabs; steady brightness stays."""
     f = np.maximum(np.fft.rfftfreq(len(l), 1 / SR), 1)
     bell = np.exp(-np.log2(f / 4500) ** 2 / (2 * 0.75 ** 2))
     hb = [np.fft.irfft(np.fft.rfft(c) * bell, len(c)) for c in (l, r)]
@@ -636,7 +644,7 @@ def tame(l, r):
     env = 10 * np.log10(np.mean(((hb[0] ** 2 + hb[1] ** 2) / 2)[: n * w].reshape(n, w), 1) + 1e-12)
     pad = np.pad(env, 100, mode='edge')
     local = np.array([np.median(pad[i:i + 200]) for i in range(n)])
-    gr = np.minimum(0, (local + 5 - env) * (1 - 1 / 3))
+    gr = np.minimum(0, (local + TAME_OVER - env) * (1 - 1 / TAME_RATIO))
     rel = np.exp(-1 / 16)
     for i in range(1, n):
         gr[i] = min(gr[i], gr[i - 1] * rel)
@@ -647,7 +655,7 @@ def tame(l, r):
 
 mix_L, mix_R = tame(mix_L, mix_R)
 peak = max(np.max(np.abs(mix_L)), np.max(np.abs(mix_R)))
-drive = 1.15  # gentle glue; harder saturation makes inter-sample peaks that clip after AAC encoding
+drive = DRIVE  # gentle glue; harder saturation makes inter-sample peaks that clip after AAC encoding
 mix_L = np.tanh(mix_L / peak * drive) / np.tanh(drive)
 mix_R = np.tanh(mix_R / peak * drive) / np.tanh(drive)
 
@@ -671,10 +679,10 @@ def lufs(l, r):
 
 
 # ceiling at -1.5 dBTP so nothing clips once the reel is encoded and decoded, and no louder than
-# -13 LUFS (Instagram plays reels at about -14)
+# LOUDNESS (Instagram plays reels at about -14 LUFS)
 ceil = 10 ** (-1.5 / 20)
 g = ceil / max(true_peak(mix_L), true_peak(mix_R))
-g = min(g, 10 ** ((-13 - lufs(mix_L * g, mix_R * g)) / 20) * g)
+g = min(g, 10 ** ((LOUDNESS - lufs(mix_L * g, mix_R * g)) / 20) * g)
 mix = np.stack([mix_L, mix_R], 1) * g
 
 out = os.path.join(ROOT, 'public', 'audio', 'reel.wav')
