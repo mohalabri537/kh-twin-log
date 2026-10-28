@@ -461,11 +461,9 @@ def sfx(kind, seed, note=None):
             n = int(x.shape[1] / r)
             src = np.arange(n) * r
             x = np.stack([np.interp(src, np.arange(x.shape[1]), ch) for ch in x])
-            if kind == 'tap':  # a soft bell underneath gives each booking step a clear note
-                b = bell(note, 0.9) * 0.3
-                x = np.pad(x, ((0, 0), (0, max(0, len(b) - x.shape[1]))))
-                x[:, :len(b)] += b
         return x
+    if os.path.exists(os.path.join(ELEVEN, 'music.mp3')):  # with the ElevenLabs set, nothing home-made
+        raise SystemExit(f'no ElevenLabs take for effect "{kind}" (public/audio/eleven/sfx-{kind}.mp3)')
     if kind == 'boom':
         return boom()
     if kind == 'form':  # the logo locking together: deep boom + glassy chord
@@ -568,8 +566,8 @@ for scene, events in TL['sfx'].items():
             fx_L[j:j + n] += snd[0][:n] * e[2]
             fx_R[j:j + n] += snd[1][:n] * e[2]
 fx_send = (fx_L + fx_R) * 0.5
-fx_L += fftconv(fx_send, irl)[:N] * 0.3
-fx_R += fftconv(fx_send, irr)[:N] * 0.3
+fx_L += fftconv(fx_send, irl)[:N] * 0.12
+fx_R += fftconv(fx_send, irr)[:N] * 0.12
 
 # sidechain: wherever the score is loud, it dips (up to 6 dB) under each effect so the effects read
 hop = SR // 100  # 10 ms

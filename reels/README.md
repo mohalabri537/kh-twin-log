@@ -7,7 +7,7 @@ Everything shown of the site is the real site, captured from its code. Every cut
 
 | Time | Scene |
 |---|---|
-| 0–4 s | Flying through a glowing neural network, «أطلقنا موقعنا الجديد» on screen from frame 0. The neurons pull together into the NU logo, which opens onto the bright site (like the real homepage). |
+| 0–4 s | The site boots up: the homepage swings in on a phone as a glowing blueprint (traced from the real capture, `public/cap/top-ar-wire.jpg`) inside a drawing-style HUD; a beam of light renders it to life top to bottom while a tag counts 0→100% → LIVE, and the NU mark lights up as the beam clears it. «أطلقنا موقعنا الجديد» from frame 0. |
 | 4–10 s | The homepage breaks into glass panels floating in 3D over a grid, each tagged like a schematic (الرئيسية، الأطباء، تخطيط الدماغ، زيارتك الأولى، الحجز، المقالات، English), camera orbiting; then it snaps back into the phone. «كل ما تحتاجه في مكان واحد». |
 | 10–19 s | Booking, step by step: each choice lifts off the screen as a glass chip and docks in a summary bar; on send the chips pour into the WhatsApp message. |
 | 19–23 s | The Google rating counts to 5.0, stars fill on the beat, real reviews from the site fly past the camera. |
@@ -35,7 +35,8 @@ the ElevenLabs flow holds every take). `audio/make_audio.py` mixes them to the t
 - each chime is re-pitched from its measured pitch so the steps climb in the score's key (D);
 - the score ducks a few dB under each effect where it is loud.
 
-If `public/audio/eleven/` is empty, `make_audio.py` synthesises everything itself instead.
+Every sound in the mix is an ElevenLabs take; `make_audio.py` stops with an error if a cue has none. Only if
+`public/audio/eleven/` is empty does it fall back to synthesising everything itself.
 
 To try other takes: put them in `public/audio/eleven/candidates/` as `music-<n>.mp3` and `sfx-<type>-<n>.mp3`, then
 

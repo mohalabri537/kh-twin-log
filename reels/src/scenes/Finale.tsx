@@ -14,9 +14,9 @@ export const Finale: React.FC = () => {
   const f = useCurrentFrame();
   const formed = ev('end', 'form')[0]; // 44
   const urlAt = ev('end', 'scan')[1]; // 65
-  const btnAt = ev('end', 'pop')[0]; // 90
+  const btnAt = ev('end', 'lock')[0]; // 90, the button snaps in
   const tap = ev('end', 'tap')[0]; // 120
-  const bio = ev('end', 'pop')[1]; // 130
+  const bio = ev('end', 'blip')[1]; // 130
   const morph = easeInOut(clamp(f / formed, 0, 1));
   const fill = easeInOut(clamp((f - formed) / 8, 0, 1));
   const glow = hit(f, formed, 22);
