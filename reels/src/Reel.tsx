@@ -1,14 +1,15 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame} from 'remotion';
-import {Hook} from './scenes/Hook';
-import {Tour} from './scenes/Tour';
+import {NeuroHook} from './scenes/NeuroHook';
+import {Explode} from './scenes/Explode';
 import {Booking} from './scenes/Booking';
-import {Dark, End} from './scenes/DarkEnd';
+import {Reviews} from './scenes/Reviews';
+import {Finale} from './scenes/Finale';
 import {Grain} from './lib/fx';
 import {kick, LightBg} from './lib/kit';
 import timeline from './timeline.json';
 
-const SCENES: Record<string, React.FC> = {hook: Hook, tour: Tour, booking: Booking, dark: Dark, end: End};
+const SCENES: Record<string, React.FC> = {hook: NeuroHook, explode: Explode, booking: Booking, reviews: Reviews, end: Finale};
 
 // Scene start frames on the 120 BPM grid (15 frames per beat).
 export const starts = () => {
@@ -26,8 +27,8 @@ export const Reel: React.FC = () => {
   const sc = starts();
   const at = (id: string) => sc.find((s) => s.id === id)!.from;
   // the groove runs from the first drop until the logo; everything breathes with the kick
-  const grooving = f >= at('tour') && f < at('end');
-  const pulse = grooving ? kick(f) : 0;
+  const grooving = f >= at('explode') && f < at('end');
+  const pulse = grooving ? kick(f % 30) : 0; // half-time: the kick lands every other beat
   return (
     <AbsoluteFill>
       <LightBg pulse={pulse} />
