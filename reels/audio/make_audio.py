@@ -461,13 +461,16 @@ def sfx(kind, seed, note=None):
     if os.path.exists(path):
         if kind not in _takes:
             x = load_audio(path)
-            _takes[kind] = x / (np.max(np.abs(x)) + 1e-9) * 0.8  # level-match every take
+            x = x / (np.max(np.abs(x)) + 1e-9) * 0.8  # level-match every take
+            x[:, : int(0.004 * SR)] *= np.linspace(0, 1, int(0.004 * SR))  # 4 ms fade-in: no click
+            _takes[kind] = x
         x = _takes[kind]
         if note and kind in ('blip', 'tap', 'star'):
             # re-pitch from the take's measured pitch, so every step lands on its note in the
-            # score's key; one octave choice per kind keeps the climb climbing
+            # score's key; one octave per kind keeps the climb climbing, chosen so the highest
+            # note is never more than 2 semitones above the take (pitching up makes them shrill)
             base = take_pitch(x)
-            base += 12 * round((np.median(chime_notes(kind)) - base) / 12)
+            base += 12 * np.ceil((max(chime_notes(kind)) - 2 - base) / 12)
             r = 2 ** ((note - base) / 12)
             n = int(x.shape[1] / r)
             src = np.arange(n) * r
@@ -569,6 +572,9 @@ for scene, events in TL['sfx'].items():
         at = STARTS[scene] + e[0] / TL['fps']
         if e[1] == 'swell':
             at -= snd.shape[-1] / SR
+        if e[1] == 'bloom':  # a swell of light: its peak, not its start, lands on the cue
+            env = np.abs(snd if snd.ndim == 1 else snd.mean(0))
+            at -= np.argmax(np.convolve(env, np.ones(441) / 441, 'same')) / SR
         if snd.ndim == 1:
             put(fx_L, fx_R, snd, at, e[2])
         else:
@@ -576,6 +582,17 @@ for scene, events in TL['sfx'].items():
             n = min(snd.shape[1], N - j)
             fx_L[j:j + n] += snd[0][:n] * e[2]
             fx_R[j:j + n] += snd[1][:n] * e[2]
+
+
+def soften(x):
+    """Take the edge off the effects: about -4 dB around 3 kHz, where the ear hears harshness,
+    easing into -6 dB in the air above 10 kHz. Linear phase, applied to the whole bus."""
+    f = np.maximum(np.fft.rfftfreq(len(x), 1 / SR), 1)
+    db = -3 * np.exp(-np.log2(f / 3200) ** 2 / 0.72) - 6 / (1 + (7000 / f) ** 2)
+    return np.fft.irfft(np.fft.rfft(x) * 10 ** (db / 20), len(x))
+
+
+fx_L, fx_R = soften(fx_L), soften(fx_R)
 fx_send = (fx_L + fx_R) * 0.5
 fx_L += fftconv(fx_send, irl)[:N] * 0.12
 fx_R += fftconv(fx_send, irr)[:N] * 0.12
@@ -605,8 +622,32 @@ mix_R = music_R * 0.85 + fx_R * 0.8
 tail = np.clip((DUR - np.arange(N) / SR) / 1.2, 0, 1)
 mix_L *= tail
 mix_R *= tail
+
+
+def tame(l, r):
+    """Dynamic EQ (de-esser style) on the whole mix: whenever the 2.5-8 kHz band spikes more than
+    5 dB over its level in the surrounding second (claps, clicks, taps), turn just that band down
+    3:1, with an instant attack and an 80 ms release. Transients stop stabbing; steady brightness stays."""
+    f = np.maximum(np.fft.rfftfreq(len(l), 1 / SR), 1)
+    bell = np.exp(-np.log2(f / 4500) ** 2 / (2 * 0.75 ** 2))
+    hb = [np.fft.irfft(np.fft.rfft(c) * bell, len(c)) for c in (l, r)]
+    w = int(0.005 * SR)
+    n = len(l) // w
+    env = 10 * np.log10(np.mean(((hb[0] ** 2 + hb[1] ** 2) / 2)[: n * w].reshape(n, w), 1) + 1e-12)
+    pad = np.pad(env, 100, mode='edge')
+    local = np.array([np.median(pad[i:i + 200]) for i in range(n)])
+    gr = np.minimum(0, (local + 5 - env) * (1 - 1 / 3))
+    rel = np.exp(-1 / 16)
+    for i in range(1, n):
+        gr[i] = min(gr[i], gr[i - 1] * rel)
+    g = 10 ** (np.interp(np.arange(len(l)) / SR, (np.arange(n) + 0.5) * w / SR, gr) / 20)
+    print(f'tame: up to {-gr.min():.1f} dB off the harsh band, {np.mean(gr < -1) * 100:.0f}% of the time')
+    return l + hb[0] * (g - 1), r + hb[1] * (g - 1)
+
+
+mix_L, mix_R = tame(mix_L, mix_R)
 peak = max(np.max(np.abs(mix_L)), np.max(np.abs(mix_R)))
-drive = 1.3  # gentle glue; harder saturation makes inter-sample peaks that clip after AAC encoding
+drive = 1.15  # gentle glue; harder saturation makes inter-sample peaks that clip after AAC encoding
 mix_L = np.tanh(mix_L / peak * drive) / np.tanh(drive)
 mix_R = np.tanh(mix_R / peak * drive) / np.tanh(drive)
 
@@ -617,9 +658,24 @@ def true_peak(x, k=4):
     return np.max(np.abs(np.fft.irfft(X, len(x) * k) * k))
 
 
-# ceiling at -1.5 dBTP so nothing clips once the reel is encoded and decoded
+def lufs(l, r):
+    """Integrated loudness (ITU BS.1770: K-weighting, 400 ms blocks, absolute and relative gates)."""
+    f = np.maximum(np.fft.rfftfreq(len(l), 1 / SR), 1e-3)
+    k = 10 ** (4 / (1 + (1500 / f) ** 2) / 20) * np.sqrt(f ** 4 / (f ** 4 + 38.0 ** 4))
+    l, r = (np.fft.irfft(np.fft.rfft(c) * k, len(c)) for c in (l, r))
+    b, hop = int(0.4 * SR), int(0.1 * SR)
+    z = np.array([np.mean(l[i:i + b] ** 2) + np.mean(r[i:i + b] ** 2) for i in range(0, len(l) - b, hop)])
+    z = z[-0.691 + 10 * np.log10(z + 1e-12) > -70]
+    z = z[-0.691 + 10 * np.log10(z + 1e-12) > -0.691 + 10 * np.log10(z.mean()) - 10]
+    return -0.691 + 10 * np.log10(z.mean())
+
+
+# ceiling at -1.5 dBTP so nothing clips once the reel is encoded and decoded, and no louder than
+# -13 LUFS (Instagram plays reels at about -14)
 ceil = 10 ** (-1.5 / 20)
-mix = np.stack([mix_L, mix_R], 1) * (ceil / max(true_peak(mix_L), true_peak(mix_R)))
+g = ceil / max(true_peak(mix_L), true_peak(mix_R))
+g = min(g, 10 ** ((-13 - lufs(mix_L * g, mix_R * g)) / 20) * g)
+mix = np.stack([mix_L, mix_R], 1) * g
 
 out = os.path.join(ROOT, 'public', 'audio', 'reel.wav')
 os.makedirs(os.path.dirname(out), exist_ok=True)

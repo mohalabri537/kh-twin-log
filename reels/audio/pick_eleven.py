@@ -6,7 +6,7 @@ Writes the chosen files to public/audio/eleven/ (music.mp3 aligned to the 120 BP
 
 Music: the take whose loudness curve best matches the reel's plan (dark intro, drums from 4 s, peak
 19-23 s, drop at 23 s, resolve) wins; it is then shifted by under half a beat so its beats land on the
-video's beat grid. Sound effects: the take with the cleanest, strongest attack and least trailing noise.
+video's beat grid. Sound effects: the softest take (least harsh high end, rounded onset, little trailing noise).
 """
 import glob, json, os, subprocess, sys
 import numpy as np
@@ -99,18 +99,38 @@ def pick_music(cands, force=None):
     return rows[0]
 
 
-def pick_sfx(cands):
+KEY = {2, 4, 6, 7, 9, 11}  # D E F# G A B: notes that sit with the score (D)
+REPITCHED = {'blip', 'tap', 'star'}  # make_audio.py tunes these to their notes, so their own key doesn't matter
+
+
+def pick_sfx(cands, in_key=True):
+    """The softest usable take: least energy where the ear hears harshness (2.5-8 kHz, then the air
+    above), a rounded rather than instant onset, no trailing noise on sounds meant to decay, and, for
+    pitched takes, notes that sit in the score's key."""
     rows = []
     for c in cands:
         x = load(c)
         if len(x) < 100:
             continue
         a = np.abs(x)
-        peak = a.max()
-        attack = np.argmax(a > 0.5 * peak) / SR
-        tail = np.sqrt(np.mean(x[int(len(x) * 0.85):] ** 2)) / (peak + 1e-9)
-        score = peak - 0.6 * attack - 2 * tail
-        rows.append((score, c))
+        peak = a.max() + 1e-9
+        S = np.abs(np.fft.rfft(x)) ** 2
+        f = np.fft.rfftfreq(len(x), 1 / SR)
+        bright = (S[(f > 2500) & (f < 8000)].sum() + 0.5 * S[f >= 8000].sum()) / S.sum()
+        on = int(np.argmax(a > 0.1 * peak))
+        snap = a[on:on + int(0.005 * SR)].max() / peak  # 1.0 = full level within 5 ms
+        h = len(x) // 2
+        decays = np.mean(x[:h] ** 2) > np.mean(x[h:] ** 2)  # swells end loud on purpose
+        tail = np.sqrt(np.mean(x[int(len(x) * 0.85):] ** 2)) / peak if decays else 0.0
+        # key fit: share of the tonal peaks (100 Hz-5 kHz) on notes outside the key, weighted by how tonal it is
+        band = (f > 100) & (f < 5000)
+        sb, fb = S[band], f[band]
+        pk = np.where((sb[1:-1] > sb[:-2]) & (sb[1:-1] > sb[2:]))[0] + 1
+        pk = pk[np.argsort(sb[pk])[-12:]]
+        pc = (np.round(12 * np.log2(fb[pk] / 440)) + 9).astype(int) % 12
+        off_key = sb[pk][[p not in KEY for p in pc]].sum() / (sb[pk].sum() + 1e-12)
+        tonal = 1 - np.exp(np.mean(np.log(sb + 1e-12))) / (np.mean(sb) + 1e-12)
+        rows.append((-bright - 0.3 * snap - 2 * tail - (0.6 * off_key * tonal if in_key else 0), c))
     rows.sort(reverse=True)
     return rows[0][1] if rows else None
 
@@ -131,7 +151,7 @@ def main(d, force=None):
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', best, '-af', filt, '-ar', str(SR), os.path.join(OUT, 'music.mp3')], check=True)
     kinds = sorted({os.path.basename(p).split('-')[1] for p in glob.glob(os.path.join(d, 'sfx-*-*.mp3'))})
     for k in kinds:
-        best = pick_sfx(sorted(glob.glob(os.path.join(d, f'sfx-{k}-*.mp3'))))
+        best = pick_sfx(sorted(glob.glob(os.path.join(d, f'sfx-{k}-*.mp3'))), in_key=k not in REPITCHED)
         if best:
             subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', best, os.path.join(OUT, f'sfx-{k}.mp3')], check=True)
             print(f'sfx {k}: {os.path.basename(best)}')
