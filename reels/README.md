@@ -1,6 +1,6 @@
 # Neuro Universe Clinic: website launch reel
 
-A 33-second Instagram Reel (1080×1920, 30 fps, Arabic) announcing **neurouniverse.om**, built with [Remotion](https://remotion.dev).
+A 30.5-second Instagram Reel (1080×1920, 30 fps, Arabic) announcing **neurouniverse.om**, built with [Remotion](https://remotion.dev).
 Everything shown of the site is the real site, captured from its code. Every cut, tap and effect lands on the 120 BPM beat.
 
 ## The cut ("Neuro Universe")
@@ -12,7 +12,7 @@ Everything shown of the site is the real site, captured from its code. Every cut
 | 10–14 s | «على كل الشاشات»: the desktop homepage in a browser window, which narrows while the real layout reflows (the page captured at 36 widths, 1440→390 px, `public/cap/resp/`) and a dimension line counts the width down, until it is the phone. |
 | 14–23 s | Booking, step by step: each choice lifts off the screen as a glass chip and docks in a summary bar; on send the chips pour into the WhatsApp message. |
 | 23–27 s | The Google rating counts to 5.0, stars fill on the beat, real reviews from the site fly past the camera. |
-| 27–33 s | Neurons gather into the logo, then the name, the website (revealed by a scan of light), «احجز الآن» and «الرابط في البايو». |
+| 27–30.5 s | A short outro (a long, quiet one is where viewers swipe away): neurons gather into the logo, then the name, the website (revealed by a scan of light), «احجز الآن» tapped and «الرابط في البايو». The beat never stops and the hook's neural network fades back in, so the reel loops straight into its first frame. |
 
 The booking demo uses the sample name «أحمد»; the patient phone field is hidden.
 
@@ -30,8 +30,9 @@ npm run render   # -> out/neuro-universe-launch-reel.mp4 (about 4 min on 4 cores
 The score and effects in `public/audio/eleven/` were generated with ElevenLabs (music v2.5 and sound effects v2;
 the ElevenLabs flow holds every take). `audio/make_audio.py` mixes them to the timeline:
 
-- the score in use (take 3) drives from the first bar, four-on-the-floor, and drops out half a second before the
-  logo hit (two of its bars repeat under the desktop scene so it spans the 33 s edit); `make_audio.py` writes where the beat runs to `src/score.json` and the frame pumps on every kick.
+- the score in use (take 3) drives from the first bar, four-on-the-floor, and runs to the last frame with no
+  ending, so Instagram's replay continues the beat (bars of it repeat under the desktop scene and near the end to span
+  the edit; its own ending is never used); `make_audio.py` writes where the beat runs to `src/score.json` and the frame pumps on every kick.
   A take that builds into a drop instead gets its drop placed on the last booking tap (17 s, the WhatsApp send),
   its quiet build lifted, and a peak that runs past the logo hit cut there into the score's ringing tail;
 - each chime is re-pitched from its measured pitch so the steps climb in the score's key (D);

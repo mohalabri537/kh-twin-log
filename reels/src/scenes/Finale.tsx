@@ -1,22 +1,26 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import timeline from '../timeline.json';
 import {clamp, easeInOut, easeOut, easeOutBack, hit} from '../lib/chase';
 import {Neural} from '../lib/neural';
 import {ev, tapState} from '../lib/kit';
 import {LOGO_D, LOGO_VB} from '../logoPath';
 import {AR, C, EN} from '../theme';
 
-// 23–29 s. A field of neurons gathers into the NU logo, which fills with purple; then the name, the
-// website (revealed by a scan of light) and «احجز الآن», tapped on the final chord.
+// 27–30.5 s, kept short: a long, quiet outro is where viewers swipe away. Neurons gather into the NU
+// logo; the name, the website (revealed by a scan of light) and «احجز الآن» (tapped) follow quickly.
+// The beat never stops, and in the last frames the hook's neural network fades back in exactly where
+// the hook starts, so when the reel loops it runs straight on instead of restarting.
 const LOGO = {cx: 540, cy: 640, scale: 320};
+const LEN = timeline.scenes.find((s) => s.id === 'end')!.len;
 
 export const Finale: React.FC = () => {
   const f = useCurrentFrame();
-  const formed = ev('end', 'form')[0]; // 44
-  const urlAt = ev('end', 'scan')[1]; // 65
-  const btnAt = ev('end', 'lock')[0]; // 90, the button snaps in
-  const tap = ev('end', 'tap')[0]; // 120
-  const bio = ev('end', 'blip')[1]; // 130
+  const formed = ev('end', 'form')[0];
+  const urlAt = ev('end', 'scan')[1];
+  const btnAt = ev('end', 'lock')[0]; // the button snaps in
+  const tap = ev('end', 'tap')[0];
+  const bio = ev('end', 'blip')[1];
   const morph = easeInOut(clamp(f / formed, 0, 1));
   const fill = easeInOut(clamp((f - formed) / 8, 0, 1));
   const glow = hit(f, formed, 22);
@@ -30,6 +34,8 @@ export const Finale: React.FC = () => {
   const fp = easeOut(clamp((f - (tap - 16)) / 13, 0, 1));
   return (
     <AbsoluteFill style={{transform: `scale(${1 + f * 0.0004})`}}>
+      {/* the hook's network returning (same travel and opacity the hook starts with), for the loop */}
+      {f > LEN - 16 && <Neural f={f} mode="light" travel={260 - (LEN - f) * 5} fire={0.7} opacity={0.32 * easeInOut(clamp((f - (LEN - 16)) / 15, 0, 1))} />}
       <Neural f={f} mode="light" travel={300 + f * 4} morph={morph} logo={LOGO} fire={1 - morph} opacity={1 - clamp((f - formed - 4) / 14, 0, 1)} />
       <svg viewBox={LOGO_VB} width={LOGO.scale * 2} height={LOGO.scale * 1.2643} style={{position: 'absolute', left: LOGO.cx - LOGO.scale, top: LOGO.cy - LOGO.scale * 0.6322, overflow: 'visible', opacity: fill, transform: `scale(${0.96 + fill * 0.04})`, filter: `drop-shadow(0 20px ${30 + glow * 50}px rgba(116,49,244,${0.25 + glow * 0.4}))`}}>
         <defs>

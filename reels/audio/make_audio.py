@@ -21,9 +21,10 @@ TL = json.load(open(os.path.join(ROOT, 'src', 'timeline.json')))
 BPM = TL['bpm']
 BEAT = 60 / BPM
 BAR = BEAT * 4
-STARTS, _t = {}, 0
+STARTS, SCENE_LEN, _t = {}, {}, 0
 for _s in TL['scenes']:
     STARTS[_s['id']] = _t / TL['fps']
+    SCENE_LEN[_s['id']] = _s['len']
     _t += _s['len']
 DUR = _t / TL['fps']
 N = int(SR * DUR)
@@ -369,10 +370,12 @@ def level_db(x, hop):
 
 def arrange_score(m):
     """Fit a generated score (stereo, already on the 120 BPM grid) to the edit.
-    If the score builds into a drop, the drop lands on the last booking tap (the WhatsApp send) and
-    the quiet build is lifted so it still reads on a phone speaker; a score that drives from the
-    first bar just starts with the reel. Either way the peak ends by the logo hit: a peak that runs
-    past it is cut there, into the score's own ringing tail.
+    - If the score builds into a drop, the drop lands on the last booking tap (the WhatsApp send) and
+      the quiet build is lifted so it still reads on a phone speaker; a score that drives from the
+      first bar just starts with the reel.
+    - The beat runs to the last frame, with no ending, so the reel loops straight back into its first
+      frame: the score's body is stretched with whole bars of itself, repeated on bar lines where the
+      desktop scene starts and near the end of the body. The score's own ending is never used.
     Writes src/score.json (where the beat runs, in frames) so the video can pump with it."""
     hop = SR // 20  # 50 ms
     lv = level_db(m.mean(0), hop)
@@ -382,10 +385,9 @@ def arrange_score(m):
     body = int((drop if drop is not None else 2.0) * 20)
     peak = np.median(lv[body:body + 40])
     smooth = np.convolve(lv, np.ones(10) / 10, 'same')
-    peak_end = next((t[i] for i in range(body + 40, len(lv)) if smooth[i] < peak - 10), t[-1])
-    peak_end = round(peak_end / BEAT) * BEAT
+    body_end = next((t[i] for i in range(body + 40, len(lv)) if smooth[i] < peak - 10), t[-1])
+    body_end = np.floor(body_end / BAR) * BAR  # last whole bar of the body, score time
     offset = 0.0 if drop is None else round((cue('booking', 'tap', 4) - drop) / BEAT) * BEAT
-    cut = cue('end', 'form')
     if drop is not None:
         # lift the build (upward compression, about 0.7:1 below -19 dB), easing off into the drop
         lv1 = np.convolve(lv, np.ones(20) / 20, 'same')
@@ -394,52 +396,37 @@ def arrange_score(m):
         g = np.convolve(g, np.ones(10) / 10, 'same')
         m = m * 10 ** (np.interp(np.arange(m.shape[1]) / SR, t, g) / 20)
 
-    # the edit runs longer than the score: repeat whole bars of the score's body, on a bar line where
-    # the added scene (the desktop shot) starts, so the beat still stops just before the logo
-    need = np.floor(((cut - 0.45) - (peak_end + offset)) / BAR) * BAR
-    if need >= BAR:
-        at = STARTS.get('desktop', (offset + peak_end) / 2)
-        at = max(at, (drop if drop is not None else 0.0) + offset + BAR)  # never before a drop
-        ins = round(at / BAR) * BAR - offset  # score time
-        i0, i1, xf = int(round(ins * SR)), int(round((ins + need) * SR)), int(0.01 * SR)
+    # stretch the body to the last frame with whole bars of itself (positions in the original score)
+    need = max(0.0, np.ceil((DUR - (body_end + offset)) / BAR) * BAR)
+    first = 0.0
+    floor = drop if drop is not None else 0.0  # never repeat bars from before a drop
+    repeats = []
+    if need > 0 and 'desktop' in STARTS:
+        first = min(need, round(SCENE_LEN['desktop'] / TL['fps'] / BAR) * BAR)
+        repeats.append((max(round(STARTS['desktop'] / BAR) * BAR - offset, floor), first))
+    if need - first > 0:
+        repeats.append((max(np.floor((body_end - (need - first)) / BAR) * BAR, floor), need - first))
+    for ins, length in sorted(repeats, reverse=True):  # later first, so earlier positions still hold
+        i0, i1, xf = int(round(ins * SR)), int(round((ins + length) * SR)), int(0.01 * SR)
         ramp = np.linspace(0, 1, xf)
         joint = m[:, i1:i1 + xf] * ramp[::-1] + m[:, i0:i0 + xf] * ramp  # 10 ms crossfade after the bar line
         m = np.concatenate([m[:, :i1], joint, m[:, i0 + xf:]], 1)
-        peak_end += need
-        print(f'score: repeated {need:.0f}s of bars from {ins:.0f}s to fit the longer edit')
+        print(f'score: bars {ins:.0f}-{ins + length:.0f}s played twice')
 
     beat_from = (drop if drop is not None else 0.0) + offset
-    beat_to = min(cut, peak_end + offset)
-    print(f'score: {"drop at %.2fs" % drop if drop is not None else "drives from the start"}, peak ends {peak_end:.2f}s; '
-          f'placed +{offset:.2f}s; beat on screen {beat_from:.2f}-{beat_to:.2f}s')
+    print(f'score: {"drop at %.2fs" % drop if drop is not None else "drives from the start"}; placed +{offset:.2f}s; '
+          f'beat on screen {beat_from:.2f}s to the last frame')
     fps = TL['fps']
     with open(os.path.join(ROOT, 'src', 'score.json'), 'w') as fh:
-        json.dump({'beatFrom': round(beat_from * fps), 'beatTo': round(beat_to * fps),
+        json.dump({'beatFrom': round(beat_from * fps), 'beatTo': round(DUR * fps),
                    'drop': None if drop is None else round(beat_from * fps)}, fh, indent=1)
         fh.write('\n')
 
     out = np.zeros((2, N))
-
-    def lay(src0, at, dur, env=None):
-        """Lay the score from score time src0 at output time `at` for `dur` seconds."""
-        j0 = int(round(at * SR))
-        n = min(int(round(dur * SR)), N - j0)
-        idx = np.arange(n) + int(round(src0 * SR))
-        ok = (idx >= 0) & (idx < m.shape[1])
-        seg = np.zeros((2, n))
-        seg[:, ok] = m[:, idx[ok]]
-        if env is not None:
-            seg *= env(at + np.arange(n) / SR)
-        out[:, j0:j0 + n] += seg
-
-    if cut - offset < peak_end:
-        ring = 0.12  # the peak dies away in ~0.3 s under the logo hit instead of stopping dead
-        lay(-offset, 0, cut + 6 * ring, lambda u: np.where(u < cut, 1.0, np.exp(-(u - cut) / ring)))
-        lay(peak_end, cut, DUR - cut, lambda u: np.minimum(1, (u - cut) / 0.02))
-    else:
-        lay(-offset, 0, DUR)
+    j0 = int(round(offset * SR))
+    n = min(m.shape[1], N - j0)
+    out[:, j0:j0 + n] = m[:, :n]
     return out[0], out[1]
-
 
 eleven_music = os.path.join(ELEVEN, 'music.mp3')
 if os.path.exists(eleven_music):
@@ -641,9 +628,11 @@ music_R *= sc
 # ---------------------------------------------------------------- master
 mix_L = music_L * 0.85 + fx_L * 0.8
 mix_R = music_R * 0.85 + fx_R * 0.8
-tail = np.clip((DUR - np.arange(N) / SR) / 1.2, 0, 1)
-mix_L *= tail
-mix_R *= tail
+# no fade-out: the reel loops, so the last frame runs straight back into the first. Just 20 ms at
+# the very end and 5 ms at the start, so the jump never clicks.
+edge = np.minimum(1, np.minimum(np.arange(N) / (0.005 * SR), (N - 1 - np.arange(N)) / (0.02 * SR)))
+mix_L *= edge
+mix_R *= edge
 
 
 def tame(l, r):
