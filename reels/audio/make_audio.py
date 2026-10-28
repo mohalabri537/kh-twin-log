@@ -595,10 +595,20 @@ tail = np.clip((DUR - np.arange(N) / SR) / 1.2, 0, 1)
 mix_L *= tail
 mix_R *= tail
 peak = max(np.max(np.abs(mix_L)), np.max(np.abs(mix_R)))
-drive = 1.8
+drive = 1.3  # gentle glue; harder saturation makes inter-sample peaks that clip after AAC encoding
 mix_L = np.tanh(mix_L / peak * drive) / np.tanh(drive)
 mix_R = np.tanh(mix_R / peak * drive) / np.tanh(drive)
-mix = np.stack([mix_L, mix_R], 1) * 0.93
+
+
+def true_peak(x, k=4):
+    """Peak of the signal between samples too (4x oversampled), as a decoder will reconstruct it."""
+    X = np.fft.rfft(x)
+    return np.max(np.abs(np.fft.irfft(X, len(x) * k) * k))
+
+
+# ceiling at -1.5 dBTP so nothing clips once the reel is encoded and decoded
+ceil = 10 ** (-1.5 / 20)
+mix = np.stack([mix_L, mix_R], 1) * (ceil / max(true_peak(mix_L), true_peak(mix_R)))
 
 out = os.path.join(ROOT, 'public', 'audio', 'reel.wav')
 os.makedirs(os.path.dirname(out), exist_ok=True)
