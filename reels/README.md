@@ -24,14 +24,27 @@ npm run audio    # rebuild public/audio/reel.wav
 npm run render   # -> out/neuro-universe-launch-reel.mp4 (about 4 min on 4 cores)
 ```
 
-### Sound from ElevenLabs
+### Sound (ElevenLabs)
 
-The soundtrack is synthesised in `audio/make_audio.py`. To use ElevenLabs music and effects instead:
+The score and effects in `public/audio/eleven/` were generated with ElevenLabs (music v2.5 and sound effects v2;
+the ElevenLabs flow holds every take). `audio/make_audio.py` mixes them to the timeline:
+
+- the score's drop is found automatically and placed on the last booking tap (17 s), when the WhatsApp message is sent;
+  its quiet build is lifted so it still reads on a phone speaker, and the peak cuts on the logo hit (24.5 s) into the
+  score's own ringing tail;
+- each chime is re-pitched from its measured pitch so the steps climb in the score's key (D);
+- the score ducks a few dB under each effect where it is loud.
+
+If `public/audio/eleven/` is empty, `make_audio.py` synthesises everything itself instead.
+
+To try other takes: put them in `public/audio/eleven/candidates/` as `music-<n>.mp3` and `sfx-<type>-<n>.mp3`, then
 
 ```bash
-ELEVENLABS_API_KEY=... node audio/eleven.mjs   # writes public/audio/eleven/*.mp3 from audio/eleven-prompts.json
-npm run audio && npm run render                  # make_audio.py picks those files up automatically
+python3 audio/pick_eleven.py public/audio/eleven/candidates   # picks a take per sound, aligns the score to the beat
+npm run audio && npm run render
 ```
+
+`ELEVENLABS_API_KEY=... node audio/eleven.mjs` generates a fresh set through the API (prompts in `audio/eleven-prompts.json`).
 
 ### Re-capturing the site
 

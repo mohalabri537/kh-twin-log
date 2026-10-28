@@ -1,17 +1,14 @@
-"""Original soundtrack + sound effects for the launch reel, synthesised from scratch (numpy only).
+"""Soundtrack for the launch reel: the ElevenLabs score and effects, mixed to the timeline.
 
-Cinematic tech, not funky: 120 BPM, D minor (Dm - Bb - F - C). A straight 16th-note synth sequence
-(no swing, no syncopated melody), deep half-time drums with a big snare, sub bass and dark pads.
-Sections follow src/timeline.json:
-  hook     0-4 s    dark: sub drone, crackling "neural" texture; the logo forms with a boom; it opens with a bloom
-  explode  4-10 s   drums and the sequence start; a blip for every tag
-  booking  10-19 s  the sequence drives on; each tap is a rising chime, chips zip and lock; build
-  reviews  19-23 s  the peak: four-on-the-floor, stars climb a scale, reviews fly by
-  end      23-29 s  drums out, the logo forms with a boom and a bright chord, the final tap, tail
-Every sound effect comes from the same timeline the video reads, so each one lands on its frame.
+Sound sources, in public/audio/eleven/ (chosen from candidate takes by audio/pick_eleven.py):
+  music.mp3          the score: a dark build, a four-on-the-floor drop, a ringing D tail
+  sfx-<type>.mp3     one take per effect type (boom, form, bloom, blip, tap, lock, zip, star, ...)
+The mix fits the score to the edit (drop on the last booking tap, build lifted for phone speakers, peak
+cut on the logo hit), re-pitches chimes into the score's key, and ducks the score under each effect.
+Every effect comes from src/timeline.json, the same file the video reads, so each one lands on its frame.
 
-ElevenLabs: if public/audio/eleven/music.mp3 exists it replaces the synthesised music, and any
-public/audio/eleven/sfx-<type>.mp3 replaces that effect (see audio/eleven.mjs to generate them).
+Without those files everything is synthesised here instead (numpy only): cinematic tech at 120 BPM in
+D minor, straight 16th-note sequence, half-time drums, four-on-the-floor in the reviews, bright end chord.
 
 Run:  python3 audio/make_audio.py   ->  public/audio/reel.wav
 """
@@ -357,11 +354,63 @@ irl, irr = reverb_ir(2.6, 1.7)
 music_L += fftconv(verb_L, irl)[:N] * 1.0
 music_R += fftconv(verb_R, irr)[:N] * 1.0
 
+def level_db(x, hop):
+    n = len(x) // hop
+    return 10 * np.log10(np.mean(x[: n * hop].reshape(n, hop) ** 2, 1) + 1e-12)
+
+
+def arrange_score(m):
+    """Fit a generated score (stereo, already on the 120 BPM grid) to the edit:
+    - its drop lands on the last booking tap, the moment the WhatsApp message is sent;
+    - the quiet build is lifted so it still reads on a phone speaker;
+    - the peak is cut on the logo hit, which then lands in the score's own ringing tail."""
+    hop = SR // 20  # 50 ms
+    lv = level_db(m.mean(0), hop)
+    t = np.arange(len(lv)) / 20
+    # drop: first frame after 8 s that is 9 dB above the 2 s before it
+    drop = next(t[i] for i in range(160, len(lv)) if lv[i] > np.median(lv[i - 40:i]) + 9)
+    peak = np.median(lv[int(drop * 20):int(drop * 20) + 40])
+    smooth = np.convolve(lv, np.ones(10) / 10, 'same')
+    peak_end = next((t[i] for i in range(int((drop + 2) * 20), len(lv)) if smooth[i] < peak - 10), t[-1])
+    peak_end = round(peak_end / BEAT) * BEAT
+    offset = round((cue('booking', 'tap', 4) - drop) / BEAT) * BEAT
+    cut = cue('end', 'form')
+    print(f'score: drop at {drop:.2f}s, peak ends {peak_end:.2f}s; placed +{offset:.2f}s, cut to the tail at {cut:.2f}s')
+
+    # lift the build (upward compression, about 0.7:1 below -19 dB), easing off into the drop
+    lv1 = np.convolve(lv, np.ones(20) / 20, 'same')
+    g = np.clip((-19 - lv1) * 0.7, 0, 14)
+    g *= np.clip((drop - t) / 0.25, 0, 1)
+    g = np.convolve(g, np.ones(10) / 10, 'same')
+    gain = 10 ** (np.interp(np.arange(m.shape[1]) / SR, t, g) / 20)
+    m = m * gain
+
+    out = np.zeros((2, N))
+
+    def lay(src0, at, dur, env=None):
+        """Lay the score from score time src0 at output time `at` for `dur` seconds."""
+        j0 = int(round(at * SR))
+        n = min(int(round(dur * SR)), N - j0)
+        idx = np.arange(n) + int(round(src0 * SR))
+        ok = (idx >= 0) & (idx < m.shape[1])
+        seg = np.zeros((2, n))
+        seg[:, ok] = m[:, idx[ok]]
+        if env is not None:
+            seg *= env(at + np.arange(n) / SR)
+        out[:, j0:j0 + n] += seg
+
+    if cut - offset < peak_end:
+        ring = 0.12  # the peak dies away in ~0.3 s under the logo hit instead of stopping dead
+        lay(-offset, 0, cut + 6 * ring, lambda u: np.where(u < cut, 1.0, np.exp(-(u - cut) / ring)))
+        lay(peak_end, cut, DUR - cut, lambda u: np.minimum(1, (u - cut) / 0.02))
+    else:
+        lay(-offset, 0, DUR)
+    return out[0], out[1]
+
+
 eleven_music = os.path.join(ELEVEN, 'music.mp3')
 if os.path.exists(eleven_music):
-    m = load_audio(eleven_music)[:, :N]
-    music_L = np.zeros(N); music_R = np.zeros(N)
-    music_L[:m.shape[1]] = m[0]; music_R[:m.shape[1]] = m[1]
+    music_L, music_R = arrange_score(load_audio(eleven_music))
     print('music: ElevenLabs')
 
 # ---------------------------------------------------------------- sound effects
@@ -372,10 +421,51 @@ def stereo_sweep(s, p0=-0.8, p1=0.8):
     return np.stack([s * np.sqrt(0.5 * (1 - p)), s * np.sqrt(0.5 * (1 + p))])
 
 
+def take_pitch(x):
+    """MIDI pitch (fractional) of the strongest partial in a take's first 0.3 s."""
+    s = x.mean(0)[: int(0.3 * SR)]
+    S = np.abs(np.fft.rfft(s * np.hanning(len(s)), 8 * SR))
+    f = np.fft.rfftfreq(8 * SR, 1 / SR)
+    band = (f > 150) & (f < 5000)
+    return 69 + 12 * np.log2(f[band][np.argmax(S[band])] / 440)
+
+
+def chime_notes(kind):
+    return [e[3] for evs in TL['sfx'].values() for e in evs if e[1] == kind and len(e) > 3]
+
+
+_takes = {}
+
+
 def sfx(kind, seed, note=None):
+    if kind == 'swell':  # a cymbal swell sucking into a cut or hit; it ends on its cue
+        c = sfx('crash', seed)
+        c = c if c.ndim == 2 else np.stack([c, c])
+        h = c.shape[1] // 2
+        if np.mean(c[:, :h] ** 2) > np.mean(c[:, h:] ** 2):  # a decaying crash: reverse it
+            c = c[:, ::-1]
+        c = c[:, -int(SR * 1.2):]
+        return c * np.minimum(1, np.arange(c.shape[1]) / (0.4 * SR)) ** 2
     path = os.path.join(ELEVEN, f'sfx-{kind}.mp3')
     if os.path.exists(path):
-        return load_audio(path)
+        if kind not in _takes:
+            x = load_audio(path)
+            _takes[kind] = x / (np.max(np.abs(x)) + 1e-9) * 0.8  # level-match every take
+        x = _takes[kind]
+        if note and kind in ('blip', 'tap', 'star'):
+            # re-pitch from the take's measured pitch, so every step lands on its note in the
+            # score's key; one octave choice per kind keeps the climb climbing
+            base = take_pitch(x)
+            base += 12 * round((np.median(chime_notes(kind)) - base) / 12)
+            r = 2 ** ((note - base) / 12)
+            n = int(x.shape[1] / r)
+            src = np.arange(n) * r
+            x = np.stack([np.interp(src, np.arange(x.shape[1]), ch) for ch in x])
+            if kind == 'tap':  # a soft bell underneath gives each booking step a clear note
+                b = bell(note, 0.9) * 0.3
+                x = np.pad(x, ((0, 0), (0, max(0, len(b) - x.shape[1]))))
+                x[:, :len(b)] += b
+        return x
     if kind == 'boom':
         return boom()
     if kind == 'form':  # the logo locking together: deep boom + glassy chord
@@ -468,6 +558,8 @@ for scene, events in TL['sfx'].items():
         k += 1
         snd = sfx(e[1], 100 + k, e[3] if len(e) > 3 else None)
         at = STARTS[scene] + e[0] / TL['fps']
+        if e[1] == 'swell':
+            at -= snd.shape[-1] / SR
         if snd.ndim == 1:
             put(fx_L, fx_R, snd, at, e[2])
         else:
@@ -478,6 +570,25 @@ for scene, events in TL['sfx'].items():
 fx_send = (fx_L + fx_R) * 0.5
 fx_L += fftconv(fx_send, irl)[:N] * 0.3
 fx_R += fftconv(fx_send, irr)[:N] * 0.3
+
+# sidechain: wherever the score is loud, it dips (up to 6 dB) under each effect so the effects read
+hop = SR // 100  # 10 ms
+
+
+def env_db(x):
+    n = len(x) // hop
+    return 10 * np.log10(np.mean(x[: n * hop].reshape(n, hop) ** 2, 1) + 1e-12)
+
+
+fx_db = env_db((fx_L + fx_R) * 0.5 * 0.8)
+mu_db = np.convolve(env_db((music_L + music_R) * 0.5 * 0.85), np.ones(50) / 50, 'same')
+dip = np.clip((fx_db + 35) * 0.5, 0, 6) * np.clip((mu_db + 20) / 6, 0, 1)
+rel = np.exp(-1 / 15)  # ~150 ms release, instant attack
+for i in range(1, len(dip)):
+    dip[i] = max(dip[i], dip[i - 1] * rel)
+sc = 10 ** (-np.interp(np.arange(N) / SR, (np.arange(len(dip)) + 0.5) * hop / SR, dip) / 20)
+music_L *= sc
+music_R *= sc
 
 # ---------------------------------------------------------------- master
 mix_L = music_L * 0.85 + fx_L * 0.8

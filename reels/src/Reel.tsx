@@ -6,7 +6,7 @@ import {Booking} from './scenes/Booking';
 import {Reviews} from './scenes/Reviews';
 import {Finale} from './scenes/Finale';
 import {Grain} from './lib/fx';
-import {kick, LightBg} from './lib/kit';
+import {ev, kick, LightBg} from './lib/kit';
 import timeline from './timeline.json';
 
 const SCENES: Record<string, React.FC> = {hook: NeuroHook, explode: Explode, booking: Booking, reviews: Reviews, end: Finale};
@@ -26,9 +26,16 @@ export const Reel: React.FC = () => {
   const f = useCurrentFrame();
   const sc = starts();
   const at = (id: string) => sc.find((s) => s.id === id)!.from;
-  // the groove runs from the first drop until the logo; everything breathes with the kick
-  const grooving = f >= at('explode') && f < at('end');
-  const pulse = grooving ? kick(f % 30) : 0; // half-time: the kick lands every other beat
+  // The score drops on the last booking tap and pounds until the logo hit: there the whole frame
+  // pumps on every kick. Before that, while the score builds, a soft breath every other beat.
+  const drop = at('booking') + ev('booking', 'tap')[4];
+  const peakEnd = at('end') + ev('end', 'form')[0];
+  const pulse =
+    f >= drop && f < peakEnd
+      ? kick(f - drop) * 1.3
+      : f >= at('explode') && f < drop
+        ? Math.exp(-(((f - at('explode')) % 30) / 4)) * 0.5
+        : 0;
   return (
     <AbsoluteFill>
       <LightBg pulse={pulse} />
