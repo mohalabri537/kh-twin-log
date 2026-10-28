@@ -1,10 +1,10 @@
 """Soundtrack for the launch reel: the ElevenLabs score and effects, mixed to the timeline.
 
 Sound sources, in public/audio/eleven/ (chosen from candidate takes by audio/pick_eleven.py):
-  music.mp3          the score: a dark build, a four-on-the-floor drop, a ringing D tail
+  music.mp3          the score: 120 BPM four-on-the-floor in D from the first bar, out at 24 s into a ringing tail
   sfx-<type>.mp3     one take per effect type (boom, form, bloom, blip, tap, lock, zip, star, ...)
-The mix fits the score to the edit (drop on the last booking tap, build lifted for phone speakers, peak
-cut on the logo hit), re-pitches chimes into the score's key, and ducks the score under each effect.
+The mix fits the score to the edit (see arrange_score), re-pitches chimes into the score's key, and ducks
+the score under each effect.
 Every effect comes from src/timeline.json, the same file the video reads, so each one lands on its frame.
 
 Without those files everything is synthesised here instead (numpy only): cinematic tech at 120 BPM in
@@ -360,30 +360,41 @@ def level_db(x, hop):
 
 
 def arrange_score(m):
-    """Fit a generated score (stereo, already on the 120 BPM grid) to the edit:
-    - its drop lands on the last booking tap, the moment the WhatsApp message is sent;
-    - the quiet build is lifted so it still reads on a phone speaker;
-    - the peak is cut on the logo hit, which then lands in the score's own ringing tail."""
+    """Fit a generated score (stereo, already on the 120 BPM grid) to the edit.
+    If the score builds into a drop, the drop lands on the last booking tap (the WhatsApp send) and
+    the quiet build is lifted so it still reads on a phone speaker; a score that drives from the
+    first bar just starts with the reel. Either way the peak ends by the logo hit: a peak that runs
+    past it is cut there, into the score's own ringing tail.
+    Writes src/score.json (where the beat runs, in frames) so the video can pump with it."""
     hop = SR // 20  # 50 ms
     lv = level_db(m.mean(0), hop)
     t = np.arange(len(lv)) / 20
-    # drop: first frame after 8 s that is 9 dB above the 2 s before it
-    drop = next(t[i] for i in range(160, len(lv)) if lv[i] > np.median(lv[i - 40:i]) + 9)
-    peak = np.median(lv[int(drop * 20):int(drop * 20) + 40])
+    # drop: first frame after 8 s that is 9 dB above the 2 s before it (None: no build-and-drop)
+    drop = next((t[i] for i in range(160, len(lv)) if lv[i] > np.median(lv[i - 40:i]) + 9), None)
+    body = int((drop if drop is not None else 2.0) * 20)
+    peak = np.median(lv[body:body + 40])
     smooth = np.convolve(lv, np.ones(10) / 10, 'same')
-    peak_end = next((t[i] for i in range(int((drop + 2) * 20), len(lv)) if smooth[i] < peak - 10), t[-1])
+    peak_end = next((t[i] for i in range(body + 40, len(lv)) if smooth[i] < peak - 10), t[-1])
     peak_end = round(peak_end / BEAT) * BEAT
-    offset = round((cue('booking', 'tap', 4) - drop) / BEAT) * BEAT
+    offset = 0.0 if drop is None else round((cue('booking', 'tap', 4) - drop) / BEAT) * BEAT
     cut = cue('end', 'form')
-    print(f'score: drop at {drop:.2f}s, peak ends {peak_end:.2f}s; placed +{offset:.2f}s, cut to the tail at {cut:.2f}s')
+    beat_from = (drop if drop is not None else 0.0) + offset
+    beat_to = min(cut, peak_end + offset)
+    print(f'score: {"drop at %.2fs" % drop if drop is not None else "drives from the start"}, peak ends {peak_end:.2f}s; '
+          f'placed +{offset:.2f}s; beat on screen {beat_from:.2f}-{beat_to:.2f}s')
+    fps = TL['fps']
+    with open(os.path.join(ROOT, 'src', 'score.json'), 'w') as fh:
+        json.dump({'beatFrom': round(beat_from * fps), 'beatTo': round(beat_to * fps),
+                   'drop': None if drop is None else round(beat_from * fps)}, fh, indent=1)
+        fh.write('\n')
 
-    # lift the build (upward compression, about 0.7:1 below -19 dB), easing off into the drop
-    lv1 = np.convolve(lv, np.ones(20) / 20, 'same')
-    g = np.clip((-19 - lv1) * 0.7, 0, 14)
-    g *= np.clip((drop - t) / 0.25, 0, 1)
-    g = np.convolve(g, np.ones(10) / 10, 'same')
-    gain = 10 ** (np.interp(np.arange(m.shape[1]) / SR, t, g) / 20)
-    m = m * gain
+    if drop is not None:
+        # lift the build (upward compression, about 0.7:1 below -19 dB), easing off into the drop
+        lv1 = np.convolve(lv, np.ones(20) / 20, 'same')
+        g = np.clip((-19 - lv1) * 0.7, 0, 14)
+        g *= np.clip((drop - t) / 0.25, 0, 1)
+        g = np.convolve(g, np.ones(10) / 10, 'same')
+        m = m * 10 ** (np.interp(np.arange(m.shape[1]) / SR, t, g) / 20)
 
     out = np.zeros((2, N))
 

@@ -1,6 +1,6 @@
 """Choose among ElevenLabs takes and line the score up with the reel.
 
-Usage: python3 audio/pick_eleven.py <candidates_dir>
+Usage: python3 audio/pick_eleven.py <candidates_dir> [--music N]
   candidates_dir holds music-<n>.mp3 and sfx-<type>-<n>.mp3 downloads.
 Writes the chosen files to public/audio/eleven/ (music.mp3 aligned to the 120 BPM grid, sfx-<type>.mp3).
 
@@ -54,9 +54,13 @@ def onset_strength(x):
     return d, hop / SR
 
 
-def beat_offset(x):
-    """Phase (s) of the 120 BPM grid that best matches the music's onsets."""
-    d, dt = onset_strength(x)
+def lowpass(x, fc):
+    X = np.fft.rfft(x)
+    X[np.fft.rfftfreq(len(x), 1 / SR) > fc] = 0
+    return np.fft.irfft(X, len(x))
+
+
+def grid_phase(d, dt):
     best, best_score = 0.0, -1
     for off in np.arange(0, BEAT, 0.01):
         idx = ((np.arange(off, len(d) * dt, BEAT)) / dt).astype(int)
@@ -67,7 +71,16 @@ def beat_offset(x):
     return best, best_score / (d.mean() + 1e-9)
 
 
-def pick_music(cands):
+def beat_offset(x):
+    """Phase (s) of the 120 BPM grid that best matches the music's beat. The kick drum defines the
+    beat, so look at the low end first; busy hats and 16th notes can pull a full-band guess off it."""
+    off, clarity = grid_phase(*onset_strength(lowpass(x, 150)))
+    if clarity > 2:
+        return off, clarity
+    return grid_phase(*onset_strength(x))
+
+
+def pick_music(cands, force=None):
     plan = target_env()
     rows = []
     for c in cands:
@@ -80,6 +93,8 @@ def pick_music(cands):
         off, strength = beat_offset(x)
         rows.append((corr + 0.05 * min(strength, 3), corr, strength, off, c))
         print(f'  {os.path.basename(c)}: plan match {corr:+.2f}, beat clarity {strength:.2f}, beat phase {off:.2f}s, length {len(x) / SR:.1f}s')
+    if force:
+        return next(r for r in rows if os.path.basename(r[4]) == f'music-{force}.mp3')
     rows.sort(reverse=True)
     return rows[0]
 
@@ -100,12 +115,12 @@ def pick_sfx(cands):
     return rows[0][1] if rows else None
 
 
-def main(d):
+def main(d, force=None):
     os.makedirs(OUT, exist_ok=True)
     music = sorted(glob.glob(os.path.join(d, 'music-*.mp3')))
     if music:
         print('music takes:')
-        _, corr, strength, off, best = pick_music(music)
+        _, corr, strength, off, best = pick_music(music, force)
         # shift so the music's beats sit on the video's grid (advance by its phase)
         shift = off if off < BEAT / 2 else off - BEAT
         print(f'chosen {os.path.basename(best)}; shifting by {-shift:+.2f}s to land on the beat')
@@ -123,4 +138,7 @@ def main(d):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    # --music N uses take N instead of the automatic pick (still aligned to the beat)
+    a = sys.argv[1:]
+    force = a[a.index('--music') + 1] if '--music' in a else None
+    main(a[0], force)

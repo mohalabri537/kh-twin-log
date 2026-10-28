@@ -29,9 +29,10 @@ npm run render   # -> out/neuro-universe-launch-reel.mp4 (about 4 min on 4 cores
 The score and effects in `public/audio/eleven/` were generated with ElevenLabs (music v2.5 and sound effects v2;
 the ElevenLabs flow holds every take). `audio/make_audio.py` mixes them to the timeline:
 
-- the score's drop is found automatically and placed on the last booking tap (17 s), when the WhatsApp message is sent;
-  its quiet build is lifted so it still reads on a phone speaker, and the peak cuts on the logo hit (24.5 s) into the
-  score's own ringing tail;
+- the score in use (take 3) drives from the first bar, four-on-the-floor, and drops out at 24 s, half a second
+  before the logo hit; `make_audio.py` writes where the beat runs to `src/score.json` and the frame pumps on every kick.
+  A take that builds into a drop instead gets its drop placed on the last booking tap (17 s, the WhatsApp send),
+  its quiet build lifted, and a peak that runs past the logo hit cut there into the score's ringing tail;
 - each chime is re-pitched from its measured pitch so the steps climb in the score's key (D);
 - the score ducks a few dB under each effect where it is loud.
 
@@ -41,7 +42,8 @@ Every sound in the mix is an ElevenLabs take; `make_audio.py` stops with an erro
 To try other takes: put them in `public/audio/eleven/candidates/` as `music-<n>.mp3` and `sfx-<type>-<n>.mp3`, then
 
 ```bash
-python3 audio/pick_eleven.py public/audio/eleven/candidates   # picks a take per sound, aligns the score to the beat
+python3 audio/pick_eleven.py public/audio/eleven/candidates --music 3   # a take per sound; the score aligned to the kick
+# (leave out --music to let it pick the score whose loudness best fits the edit)
 npm run audio && npm run render
 ```
 

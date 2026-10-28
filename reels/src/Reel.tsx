@@ -6,8 +6,9 @@ import {Booking} from './scenes/Booking';
 import {Reviews} from './scenes/Reviews';
 import {Finale} from './scenes/Finale';
 import {Grain} from './lib/fx';
-import {ev, kick, LightBg} from './lib/kit';
+import {kick, LightBg} from './lib/kit';
 import timeline from './timeline.json';
+import score from './score.json';
 
 const SCENES: Record<string, React.FC> = {hook: NeuroHook, explode: Explode, booking: Booking, reviews: Reviews, end: Finale};
 
@@ -26,14 +27,14 @@ export const Reel: React.FC = () => {
   const f = useCurrentFrame();
   const sc = starts();
   const at = (id: string) => sc.find((s) => s.id === id)!.from;
-  // The score drops on the last booking tap and pounds until the logo hit: there the whole frame
-  // pumps on every kick. Before that, while the score builds, a soft breath every other beat.
-  const drop = at('booking') + ev('booking', 'tap')[4];
-  const peakEnd = at('end') + ev('end', 'form')[0];
+  // The frame pumps on every kick of the score, from the exploded view until the beat stops before
+  // the logo (src/score.json is written by audio/make_audio.py from the take in use). If the score
+  // builds into a drop instead, the build gets a soft breath every other beat and the pump starts on the drop.
+  const from = Math.max(score.beatFrom, at('explode'));
   const pulse =
-    f >= drop && f < peakEnd
-      ? kick(f - drop) * 1.3
-      : f >= at('explode') && f < drop
+    f >= from && f < score.beatTo && (score.drop === null || f >= score.drop)
+      ? kick(f - score.beatFrom) * (score.drop === null ? 1 : 1.3)
+      : score.drop !== null && f >= at('explode') && f < score.drop
         ? Math.exp(-(((f - at('explode')) % 30) / 4)) * 0.5
         : 0;
   return (
