@@ -386,6 +386,28 @@ def arrange_score(m):
     peak_end = round(peak_end / BEAT) * BEAT
     offset = 0.0 if drop is None else round((cue('booking', 'tap', 4) - drop) / BEAT) * BEAT
     cut = cue('end', 'form')
+    if drop is not None:
+        # lift the build (upward compression, about 0.7:1 below -19 dB), easing off into the drop
+        lv1 = np.convolve(lv, np.ones(20) / 20, 'same')
+        g = np.clip((-19 - lv1) * 0.7, 0, 14)
+        g *= np.clip((drop - t) / 0.25, 0, 1)
+        g = np.convolve(g, np.ones(10) / 10, 'same')
+        m = m * 10 ** (np.interp(np.arange(m.shape[1]) / SR, t, g) / 20)
+
+    # the edit runs longer than the score: repeat whole bars of the score's body, on a bar line where
+    # the added scene (the desktop shot) starts, so the beat still stops just before the logo
+    need = np.floor(((cut - 0.45) - (peak_end + offset)) / BAR) * BAR
+    if need >= BAR:
+        at = STARTS.get('desktop', (offset + peak_end) / 2)
+        at = max(at, (drop if drop is not None else 0.0) + offset + BAR)  # never before a drop
+        ins = round(at / BAR) * BAR - offset  # score time
+        i0, i1, xf = int(round(ins * SR)), int(round((ins + need) * SR)), int(0.01 * SR)
+        ramp = np.linspace(0, 1, xf)
+        joint = m[:, i1:i1 + xf] * ramp[::-1] + m[:, i0:i0 + xf] * ramp  # 10 ms crossfade after the bar line
+        m = np.concatenate([m[:, :i1], joint, m[:, i0 + xf:]], 1)
+        peak_end += need
+        print(f'score: repeated {need:.0f}s of bars from {ins:.0f}s to fit the longer edit')
+
     beat_from = (drop if drop is not None else 0.0) + offset
     beat_to = min(cut, peak_end + offset)
     print(f'score: {"drop at %.2fs" % drop if drop is not None else "drives from the start"}, peak ends {peak_end:.2f}s; '
@@ -395,14 +417,6 @@ def arrange_score(m):
         json.dump({'beatFrom': round(beat_from * fps), 'beatTo': round(beat_to * fps),
                    'drop': None if drop is None else round(beat_from * fps)}, fh, indent=1)
         fh.write('\n')
-
-    if drop is not None:
-        # lift the build (upward compression, about 0.7:1 below -19 dB), easing off into the drop
-        lv1 = np.convolve(lv, np.ones(20) / 20, 'same')
-        g = np.clip((-19 - lv1) * 0.7, 0, 14)
-        g *= np.clip((drop - t) / 0.25, 0, 1)
-        g = np.convolve(g, np.ones(10) / 10, 'same')
-        m = m * 10 ** (np.interp(np.arange(m.shape[1]) / SR, t, g) / 20)
 
     out = np.zeros((2, N))
 

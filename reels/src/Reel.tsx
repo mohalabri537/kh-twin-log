@@ -2,6 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame} from 'remotion';
 import {NeuroHook} from './scenes/NeuroHook';
 import {Explode} from './scenes/Explode';
+import {Desktop} from './scenes/Desktop';
 import {Booking} from './scenes/Booking';
 import {Reviews} from './scenes/Reviews';
 import {Finale} from './scenes/Finale';
@@ -10,7 +11,7 @@ import {kick, LightBg} from './lib/kit';
 import timeline from './timeline.json';
 import score from './score.json';
 
-const SCENES: Record<string, React.FC> = {hook: NeuroHook, explode: Explode, booking: Booking, reviews: Reviews, end: Finale};
+const SCENES: Record<string, React.FC> = {hook: NeuroHook, explode: Explode, desktop: Desktop, booking: Booking, reviews: Reviews, end: Finale};
 
 // Scene start frames on the 120 BPM grid (15 frames per beat).
 export const starts = () => {
