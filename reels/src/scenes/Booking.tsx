@@ -5,35 +5,36 @@ import {framing, PhoneCam} from '../lib/PhoneCam';
 import {BlurX, ev, Kinetic, kf, TopFade, whip} from '../lib/kit';
 import {AR, C, EN} from '../theme';
 
-// 10–19 s. Booking, one clear step every 3 beats: service → doctor → day → time → WhatsApp.
+// 14–23 s. Booking, one clear step every 3 beats: service → doctor → day → time → WhatsApp.
 // Each choice lifts off the screen as a glass chip and docks in the summary bar; on send, the chips
 // pour into the WhatsApp message the site prepares.
 const LEN = 270;
+// captured by scripts/capture-booking.js: a paediatric consultation with Dr. Wafaa on her first date
 const STATES = [
-  {src: 'book-start.jpg', h: 2551},
-  {src: 'book-svc.jpg', h: 2966},
-  {src: 'book-doc.jpg', h: 3407},
-  {src: 'book-date.jpg', h: 4589},
-  {src: 'book-time.jpg', h: 4589},
+  {src: 'book-start.jpg', h: 2657},
+  {src: 'book-svc.jpg', h: 2860},
+  {src: 'book-doc.jpg', h: 3177},
+  {src: 'book-date.jpg', h: 4307},
+  {src: 'book-time.jpg', h: 4307},
 ];
 const TARGETS = [
-  {x: 195, y: 458},
-  {x: 195, y: 873},
-  {x: 317, y: 1283},
-  {x: 195, y: 1729},
-  {x: 298, y: 2630},
+  {x: 195, y: 565},
+  {x: 195, y: 980},
+  {x: 317, y: 1177},
+  {x: 195, y: 1500},
+  {x: 298, y: 2348},
 ];
 const ACTIONS = ['اختر الخدمة', 'اختر الطبيب', 'اختر اليوم', 'اختر الوقت', 'أرسل عبر واتساب'];
-const VALUES = ['استشارة', 'د. هيفاء العبرية', 'الأحد 1 نوفمبر', 'الفترة المسائية'];
+const VALUES = ['استشارة أعصاب الأطفال', 'د. وفاء بني عرابة', 'الثلاثاء 3 نوفمبر', 'الفترة المسائية'];
 // summary bar slots (centres on the frame), right to left like the page: two rows
 const SLOTS = [
-  {x: 836, y: 470, w: 190},
-  {x: 574, y: 470, w: 300},
-  {x: 296, y: 470, w: 230},
-  {x: 676, y: 556, w: 250},
-  {x: 418, y: 556, w: 230},
+  {x: 695, y: 470, w: 340},
+  {x: 360, y: 470, w: 290},
+  {x: 800, y: 556, w: 270},
+  {x: 520, y: 556, w: 250},
+  {x: 260, y: 556, w: 230},
 ];
-const MSG = ['السلام عليكم، أودّ حجز موعد في عيادة طبّ وعلوم الأعصاب.', 'الخدمة: استشارة', 'الطبيب: د. هيفاء العبرية', 'اليوم: الأحد 1 نوفمبر', 'الوقت: الفترة المسائية', 'الاسم: أحمد'];
+const MSG = ['السلام عليكم، أودّ حجز موعد في عيادة طبّ وعلوم الأعصاب.', 'الخدمة: استشارة أعصاب الأطفال', 'الطبيب: د. وفاء بني عرابة', 'اليوم: الثلاثاء 3 نوفمبر', 'الوقت: الفترة المسائية', 'الاسم: أحمد'];
 const AT = (f: number, sent: number) => ({x: 540, y: kf(f, [[0, 1330], [sent, 1330], [sent + 20, 1400]])});
 
 export const Booking: React.FC = () => {

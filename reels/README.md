@@ -10,11 +10,11 @@ Everything shown of the site is the real site, captured from its code. Every cut
 | 0–4 s | The site boots up: the homepage swings in on a phone as a glowing blueprint (traced from the real capture, `public/cap/top-ar-wire.jpg`) inside a drawing-style HUD; a beam of light renders it to life top to bottom while a tag counts 0→100% → LIVE, and the NU mark lights up as the beam clears it. «أطلقنا موقعنا الجديد» from frame 0. |
 | 4–10 s | The homepage breaks into glass panels floating in 3D over a grid, each tagged like a schematic (الرئيسية، الأطباء، تخطيط الدماغ، زيارتك الأولى، الحجز، المقالات، English), camera orbiting; then it snaps back into the phone. «كل ما تحتاجه في مكان واحد». |
 | 10–14 s | «على كل الشاشات»: the desktop homepage in a browser window, which narrows while the real layout reflows (the page captured at 36 widths, 1440→390 px, `public/cap/resp/`) and a dimension line counts the width down, until it is the phone. |
-| 14–23 s | Booking, step by step: each choice lifts off the screen as a glass chip and docks in a summary bar; on send the chips pour into the WhatsApp message. |
+| 14–23 s | Booking, step by step: a paediatric consultation with Dr. Wafaa Bani Uraba on her first clinic day; each choice lifts off the screen as a glass chip and docks in a summary bar; on send the chips pour into the WhatsApp message. |
 | 23–27 s | The Google rating counts to 5.0, stars fill on the beat, real reviews from the site fly past the camera. |
 | 27–30.5 s | A short outro (a long, quiet one is where viewers swipe away): neurons gather into the logo, then the name, the website (revealed by a scan of light), «احجز الآن» tapped and «الرابط في البايو». The beat never stops and the hook's neural network fades back in, so the reel loops straight into its first frame. |
 
-The booking demo uses the sample name «أحمد»; the patient phone field is hidden.
+The booking demo uses the sample name «أحمد»; the patient phone field is hidden. The exploded view's «الأطباء» panel shows all three doctors (the home page's doctors section).
 
 ## Commands
 
@@ -57,6 +57,8 @@ npm run audio && npm run render
 
 Serve the website folder on port 8765 (`python3 -m http.server 8765`), then run `node scripts/capture-site.js public/cap`,
 `node scripts/capture-extra.js public/cap`, `node scripts/capture-responsive.js public/cap/resp` and `python3 scripts/make-panels.py`.
+`node scripts/capture-booking.js public/cap` re-captures only the booking demo and the home page's doctors section
+(choices at the top of the script), without touching the other captures.
 
 ## How it fits together
 

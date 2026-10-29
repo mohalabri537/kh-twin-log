@@ -17,9 +17,9 @@ type Panel = {img: string; w: number; ratio: number; x: number; y: number; z: nu
 const PANELS: Panel[] = [
   {img: 'hero', w: 330, ratio: 720 / 780, x: -228, y: -300, z: 60, ry: 16, label: 'الرئيسية'},
   {img: 'english', w: 310, ratio: 660 / 780, x: 236, y: -330, z: -140, ry: -16, label: 'عربي · English'},
-  {img: 'doctors', w: 280, ratio: 1000 / 780, x: -250, y: 70, z: 210, ry: 18, label: 'الأطباء'},
+  {img: 'doctors', w: 200, ratio: 1424 / 780, x: -268, y: 40, z: 210, ry: 18, label: 'الأطباء'}, // all three doctors (home page)
   {img: 'eeg', w: 330, ratio: 880 / 780, x: 240, y: 30, z: 10, ry: -18, label: 'تخطيط الدماغ'},
-  {img: 'visit', w: 300, ratio: 800 / 780, x: -240, y: 430, z: -80, ry: 14, label: 'زيارتك الأولى', tagRight: true},
+  {img: 'visit', w: 300, ratio: 800 / 780, x: -240, y: 455, z: -80, ry: 14, label: 'زيارتك الأولى', tagRight: true},
   {img: 'booking', w: 310, ratio: 840 / 780, x: 238, y: 410, z: 170, ry: -14, label: 'الحجز'},
   {img: 'articles', w: 400, ratio: 900 / 1440, x: 0, y: 670, z: 90, ry: 0, label: 'المقالات'},
 ];

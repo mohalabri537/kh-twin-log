@@ -11,7 +11,7 @@ os.makedirs(OUT, exist_ok=True)
 PANELS = {
     # name: (source, top css px, bottom css px)
     'hero': ('top-ar.jpg', 0, 360),
-    'doctors': ('doctors.jpg', 330, 830),
+    'doctors': ('home-docs.jpg', 150, 862),   # the home page's doctors, all three (scripts/capture-booking.js)
     'eeg': ('eegscene/039.jpg', 80, 520),
     'visit': ('visit.jpg', 430, 830),
     'booking': ('book-start.jpg', 340, 760),
