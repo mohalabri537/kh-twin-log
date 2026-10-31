@@ -29,24 +29,30 @@ const outExpo = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * clamp(t)));
 const inOut = (t: number) => { const x = clamp(t); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-// ---------------------------------------------------------------- backdrop: the website's light, grainy violet
+// ---------------------------------------------------------------- backdrop: the website's grainy violet light
+// Soft violet, lilac and pink light drifting over near-white, under visible film grain (as on the website's hero).
+const Grain: React.FC<{opacity: number; freq: number; id: string; blend?: React.CSSProperties['mixBlendMode']}> = ({opacity, freq, id, blend = 'soft-light'}) => {
+  const seed = Math.floor(useCurrentFrame() / 2) % 8; // the grain moves, like film
+  return (
+    <svg width="1080" height="1920" style={{position: 'absolute', inset: 0, opacity, mixBlendMode: blend, pointerEvents: 'none'}}>
+      <filter id={`${id}${seed}`}>
+        <feTurbulence type="fractalNoise" baseFrequency={freq} numOctaves="3" seed={seed} stitchTiles="stitch" />
+        <feColorMatrix type="saturate" values="0" />
+      </filter>
+      <rect width="100%" height="100%" filter={`url(#${id}${seed})`} />
+    </svg>
+  );
+};
 const Backdrop: React.FC = () => {
   const f = useCurrentFrame();
-  const a = Math.sin(f / 90) * 70, b = Math.cos(f / 110) * 60;
-  const seed = Math.floor(f / 2) % 6;
+  const a = Math.sin(f / 90) * 80, b = Math.cos(f / 110) * 70;
   return (
-    <AbsoluteFill style={{background: '#F7F5FC', overflow: 'hidden'}}>
-      <div style={{position: 'absolute', right: -500 + a, top: -420 + b, width: 1500, height: 1500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(132,92,255,.34), rgba(132,92,255,0) 62%)'}} />
-      <div style={{position: 'absolute', left: -620 - b, top: 520 + a, width: 1400, height: 1400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,166,255,.40), rgba(184,166,255,0) 62%)'}} />
-      <div style={{position: 'absolute', right: -400 + b, bottom: -600, width: 1500, height: 1500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(239,190,230,.50), rgba(239,190,230,0) 62%)'}} />
-      {/* film grain, as on the website's hero */}
-      <svg width="1080" height="1920" style={{position: 'absolute', inset: 0, opacity: 0.42, mixBlendMode: 'soft-light'}}>
-        <filter id={`grain${seed}`}>
-          <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="3" seed={seed} stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter={`url(#grain${seed})`} />
-      </svg>
+    <AbsoluteFill style={{background: '#F6F3FD', overflow: 'hidden'}}>
+      <div style={{position: 'absolute', right: -520 + a, top: -460 + b, width: 1600, height: 1600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,80,255,.48), rgba(124,80,255,0) 62%)'}} />
+      <div style={{position: 'absolute', left: -680 - b, top: 480 + a, width: 1500, height: 1500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(170,148,255,.50), rgba(170,148,255,0) 62%)'}} />
+      <div style={{position: 'absolute', right: -440 + b, bottom: -640, width: 1600, height: 1600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(238,176,226,.62), rgba(238,176,226,0) 62%)'}} />
+      <Grain id="bg" opacity={0.75} freq={0.72} />
+      <Grain id="bg2" opacity={0.18} freq={0.72} blend="multiply" />
     </AbsoluteFill>
   );
 };
@@ -109,12 +115,12 @@ const Screens: React.FC<{f: number}> = ({f}) => {
   const m = inOut((f + D) / 100);
   return (
     <>
-      <Stage pos={[lerp(0.9, 0.4, m), 3.8, 15.6 - m * 0.6]} look={[0.15, 2.05, 0]} fov={30}>
-        <group rotation={[0, lerp(0.16, 0.08, m), 0]}>
+      <Stage pos={[lerp(0.3, -0.1, m), 3.9, 16.8 - m * 0.6]} look={[-0.2, 1.7, 0]} fov={30}>
+        <group rotation={[0, lerp(0.36, 0.3, m), 0]} position={[-0.45, 0, -0.2]}>
           <Laptop3D rec="desk-home" frames={186} start={70} />
           <SoftShadow w={5.6} d={3.8} opacity={0.3} position={[0, 0.002, 0.15]} />
         </group>
-        <group position={[1.55, 0, 1.55]} rotation={[0, lerp(-0.5, -0.38, m), 0]}>
+        <group position={[1.15, 0, 2.0]} rotation={[0, lerp(-0.42, -0.3, m), 0]}>
           <Phone3D rec="phone-home" frames={102} start={0} rate={0.5} position={[0, 0.815, 0]} />
           <SoftShadow w={1.4} d={0.5} opacity={0.35} position={[0, 0.002, 0]} />
         </group>
@@ -174,6 +180,7 @@ export const Film: React.FC = () => (
         </Sequence>
       );
     })}
+    <Grain id="top" opacity={0.22} freq={0.9} />
     <Audio src={staticFile('audio/studio/studio.wav')} />
   </AbsoluteFill>
 );

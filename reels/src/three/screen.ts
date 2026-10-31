@@ -22,16 +22,16 @@ const drawStatusBar = (g: CanvasRenderingContext2D, w: number, h: number) => {
 
 // desktop: a thin menu bar and a browser toolbar with the address, above the page (w = 1440 CSS px)
 const drawChrome = (g: CanvasRenderingContext2D, w: number) => {
-  g.fillStyle = '#f6f6f8'; g.fillRect(0, 0, w, 24);
-  g.fillStyle = '#1d1d1f'; g.font = '600 13px Inter, sans-serif'; g.textBaseline = 'middle'; g.fillText('Safari', 18, 12);
-  g.font = '400 13px Inter, sans-serif'; g.textAlign = 'right'; g.fillText('Fri 9:41', w - 18, 12); g.textAlign = 'left';
-  g.fillStyle = '#f2f2f4'; g.fillRect(0, 24, w, 52);
-  g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(0, 75, w, 1);
-  ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(24 + i * 20, 50, 6, 0, Math.PI * 2); g.fill(); });
-  g.fillStyle = '#e4e4e8'; g.beginPath(); g.roundRect(w / 2 - 260, 36, 520, 28, 8); g.fill();
-  g.fillStyle = '#3c3c43'; g.font = '400 13px Inter, sans-serif'; g.textAlign = 'center'; g.fillText('neurouniverse.om', w / 2, 50); g.textAlign = 'left';
+  g.fillStyle = '#f6f6f8'; g.fillRect(0, 0, w, 30); // menu bar: as tall as the camera notch
+  g.fillStyle = '#1d1d1f'; g.font = '600 14px Inter, sans-serif'; g.textBaseline = 'middle'; g.fillText('Safari', 20, 15);
+  g.font = '400 14px Inter, sans-serif'; g.textAlign = 'right'; g.fillText('Fri 9:41', w - 20, 15); g.textAlign = 'left';
+  g.fillStyle = '#f2f2f4'; g.fillRect(0, 30, w, 52);
+  g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(0, 81, w, 1);
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(26 + i * 20, 56, 6, 0, Math.PI * 2); g.fill(); });
+  g.fillStyle = '#e4e4e8'; g.beginPath(); g.roundRect(w / 2 - 260, 42, 520, 28, 8); g.fill();
+  g.fillStyle = '#3c3c43'; g.font = '400 13px Inter, sans-serif'; g.textAlign = 'center'; g.fillText('neurouniverse.om', w / 2, 56); g.textAlign = 'left';
 };
-export const CHROME = 76;
+export const CHROME = 82;
 
 export const useScreen = ({rec, frames, rate = 1, start = 0, w, h, statusBar = 0, chrome = false}: {rec: string; frames: number; rate?: number; start?: number; w: number; h: number; statusBar?: number; chrome?: boolean}) => {
   const f = useCurrentFrame();

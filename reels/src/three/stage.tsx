@@ -12,7 +12,7 @@ export const Studio: React.FC<{exposure?: number; tone?: 'light' | 'dark'}> = ({
   gl.outputColorSpace = THREE.SRGBColorSpace;
   const env = useMemo(() => {
     const room = new THREE.Scene();
-    const wall = tone === 'light' ? 0.55 : 0.02;
+    const wall = tone === 'light' ? 0.3 : 0.02; // mid-grey walls: silver keeps its light-to-dark gradients
     room.add(new THREE.Mesh(new THREE.BoxGeometry(30, 30, 30), new THREE.MeshBasicMaterial({color: new THREE.Color(wall, wall, wall * 1.03), side: THREE.BackSide})));
     const panel = (w: number, h: number, pos: [number, number, number], rot: [number, number, number], k: number) => {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({color: new THREE.Color(k, k, k * 1.02), side: THREE.DoubleSide}));
@@ -25,6 +25,7 @@ export const Studio: React.FC<{exposure?: number; tone?: 'light' | 'dark'}> = ({
       panel(3, 14, [-4, 0, -7], [0, 0.4, 0], 0.03); // dark flags, so edges have definition
       panel(3, 14, [5, 0, -7], [0, -0.4, 0], 0.03);
       panel(14, 3, [0, -8, 0], [Math.PI / 2, 0, 0], 0.08);
+      panel(16, 7, [0, 5, -9], [0.35, 0, 0], 1.5); // a broad soft light high behind: what a laptop's deck reflects
     } else {
       panel(3, 12, [-7, 1, 3], [0, Math.PI / 2.4, 0], 6);
       panel(3, 12, [7, 1, 2], [0, -Math.PI / 2.4, 0], 4);
