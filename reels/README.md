@@ -1,6 +1,34 @@
 # Neuro Universe Clinic: website reels
 
-## Studio cut (`StudioReel`, current)
+## Film (`Film`, current)
+
+A 31-second Reel (1080×1920, 30 fps, Arabic) in the manner of a product film: real 3D devices (Three.js through
+`@remotion/three`) on the website's own light, grainy violet backdrop, each playing a recording of the live site.
+One idea per shot, a slow camera move, one line of type; shots dissolve on the downbeats of the 90 BPM score
+(the closing chord lands on the logo at frame 800).
+
+| Time | Shot |
+|---|---|
+| 0–5.3 s | «موقعنا الجديد.»: the phone turns towards the camera, the homepage playing on it. |
+| 5.3–10.7 s | «أطباؤنا.»: the homepage's doctors scroll by, their portraits rising. |
+| 10.7–14.7 s | «دليل الأعراض والأمراض.»: the guide, past the red 9999 box. |
+| 14.7–20 s | «اختبر دماغك.»: the games, cut on the beat: Stroop words, the reaction target and time, the memory pattern. |
+| 20–24 s | «احجز موعدك بسهولة.»: the booking form, a choice at a time. |
+| 24–26.7 s | «على كل شاشة.»: a laptop and a phone on the floor, the same homepage on both. |
+| 26.7–31 s | Logo, name and address; then the backdrop alone, so the loop restarts cleanly. |
+
+- `src/three/Phone3D.tsx`, `src/three/Laptop3D.tsx`: devices modelled from real proportions (no logos or trademarks).
+  `src/three/stage.tsx`: the studio light (softboxes baked into an environment map), soft shadows, shape helpers.
+  `src/three/screen.ts`: paints each recorded frame (with a status bar or a browser bar) onto the screens.
+  `src/three/Film.tsx`: the shots, type and backdrop.
+- Recordings: serve the website on port 8765, then `node scripts/record-site.js public/rec` (phone: a sharp screenshot per
+  frame at 2.5×, the page's own animations slowed to match; desktop: a screencast), `sh scripts/rec-frames.sh` (unpacks
+  them into frames) and `python3 scripts/games-frames.py` (the games, from the captured game states).
+- `npx remotion render Film out/neuro-universe-film.mp4 --crf=16` (about 1 s a frame).
+
+---
+
+## Studio cut (`StudioReel`, earlier)
 
 A calm, editorial 31-second Reel (1080×1920, 30 fps, Arabic): paper-white, generous space, light type, one idea per
 shot, realistic devices, no effects for their own sake. Cut to a 90 BPM score (a beat is 20 frames, a bar 80);

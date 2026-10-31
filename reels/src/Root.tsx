@@ -5,6 +5,7 @@ import './theme';
 import {Reel, TOTAL} from './Reel';
 import {Studio} from './studio/Studio';
 import {Test3D} from './three/Test3D';
+import {Film, FILM_FRAMES} from './three/Film';
 import {StudioCover} from './studio/Cover';
 import {TOTAL as STUDIO_TOTAL} from './studio/plan';
 import {FPS, H, W} from './theme';
@@ -13,6 +14,7 @@ import {FPS, H, W} from './theme';
 // StudioReel: the calm, editorial cut (31 s, 90 BPM). LaunchReel: the earlier high-energy cut (30.5 s, 120 BPM).
 export const RemotionRoot: React.FC = () => (
   <>
+    <Composition id="Film" component={Film} durationInFrames={FILM_FRAMES} fps={FPS} width={W} height={H} />
     <Composition id="Test3D" component={Test3D} durationInFrames={150} fps={FPS} width={W} height={H} />
     <Composition id="StudioReel" component={Studio} durationInFrames={STUDIO_TOTAL} fps={FPS} width={W} height={H} />
     <Still id="StudioCover" component={StudioCover} width={W} height={H} />
