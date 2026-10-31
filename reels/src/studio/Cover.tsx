@@ -1,18 +1,18 @@
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {AR, EN} from '../theme';
-import {Phone} from './devices';
+import {Fold} from './devices';
 import {GREY, INK, M, Paper, VIOLET} from './ui';
 
-// The studio cut's cover: the homepage on a phone, the headline set above it, as in the first shot.
+// The studio cut's cover: the headline over the open foldable showing the website, as the first shot settles.
 export const StudioCover: React.FC = () => (
   <AbsoluteFill>
     <Paper />
-    <div dir="rtl" style={{position: 'absolute', top: 190, right: M, left: M, textAlign: 'right'}}>
-      <div style={{fontFamily: AR, fontWeight: 300, fontSize: 104, lineHeight: 1.22, color: INK}}>موقعنا الجديد</div>
-      <div style={{fontFamily: AR, fontWeight: 300, fontSize: 44, lineHeight: 1.5, color: GREY, marginTop: 18}}>طبّ وعلوم الأعصاب، في مسقط</div>
+    <div dir="rtl" style={{position: 'absolute', top: 190, right: M, left: M, textAlign: 'center'}}>
+      <div style={{fontFamily: AR, fontWeight: 500, fontSize: 96, lineHeight: 1.22, color: INK}}>موقعنا الجديد.</div>
+      <div style={{fontFamily: AR, fontWeight: 300, fontSize: 48, color: GREY, marginTop: 24}}>صُمّم لكل شاشة.</div>
+      <div style={{fontFamily: EN, fontWeight: 400, fontSize: 30, letterSpacing: 3, color: VIOLET, marginTop: 22}}>neurouniverse.om</div>
     </div>
-    <div style={{position: 'absolute', top: 545, right: M, fontFamily: EN, fontWeight: 400, fontSize: 30, letterSpacing: 3, color: VIOLET}}>neurouniverse.om</div>
-    <Phone src="top-ar.jpg" k={1.26} cx={540} top={680} lift={10} />
+    <Fold cover="fold-cover.jpg" inner="fold-inner.jpg" k={1.07} cx={540} cy={1190} open={1} scale={1.08} />
   </AbsoluteFill>
 );
