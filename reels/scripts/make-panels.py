@@ -8,10 +8,15 @@ CAP = os.path.join(os.path.dirname(__file__), '..', 'public', 'cap')
 OUT = os.path.join(CAP, 'panels')
 os.makedirs(OUT, exist_ok=True)
 
+import json
+META = json.load(open(os.path.join(CAP, 'meta.json')))
+DOCS = META['homeDocs']  # where the doctor cards sit in home-docs.jpg (scripts/capture-booking.js)
 PANELS = {
     # name: (source, top css px, bottom css px)
     'hero': ('top-ar.jpg', 0, 360),
-    'doctors': ('home-docs.jpg', 150, 862),   # the home page's doctors, all three (scripts/capture-booking.js)
+    'doctors': ('home-docs.jpg', int(DOCS['cardsTop']) - 12, int(DOCS['cardsBottom']) + 12),   # all three doctors
+    'conditions': ('cond-hub.jpg', 64, 506),   # the symptoms and conditions index: title and the 9999 box (capture-new.js)
+    'games': ('games-hub.jpg', 424, 764),      # the three brain games (capture-new.js)
     'eeg': ('eegscene/039.jpg', 80, 520),
     'visit': ('visit.jpg', 430, 830),
     'booking': ('book-start.jpg', 340, 760),

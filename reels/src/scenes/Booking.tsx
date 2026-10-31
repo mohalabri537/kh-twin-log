@@ -4,26 +4,17 @@ import {chaseShot, clamp, easeInOut, easeOut, easeOutBack, hit, lerp, Pt} from '
 import {framing, PhoneCam} from '../lib/PhoneCam';
 import {BlurX, ev, Kinetic, kf, TopFade, whip} from '../lib/kit';
 import {AR, C, EN} from '../theme';
+import meta from '../../public/cap/meta.json';
 
 // 14–23 s. Booking, one clear step every 3 beats: service → doctor → day → time → WhatsApp.
 // Each choice lifts off the screen as a glass chip and docks in the summary bar; on send, the chips
 // pour into the WhatsApp message the site prepares.
 const LEN = 270;
 // captured by scripts/capture-booking.js: a paediatric consultation with Dr. Wafaa on her first date
-const STATES = [
-  {src: 'book-start.jpg', h: 2657},
-  {src: 'book-svc.jpg', h: 2860},
-  {src: 'book-doc.jpg', h: 3177},
-  {src: 'book-date.jpg', h: 4307},
-  {src: 'book-time.jpg', h: 4307},
-];
-const TARGETS = [
-  {x: 195, y: 565},
-  {x: 195, y: 980},
-  {x: 317, y: 1177},
-  {x: 195, y: 1500},
-  {x: 298, y: 2348},
-];
+type Step = {file: string; h: number; tap: {x: number; y: number}};
+const BOOK = (meta as unknown as {book: Step[]}).book;
+const STATES = BOOK.map((s) => ({src: s.file, h: s.h}));
+const TARGETS = BOOK.map((s) => ({x: s.tap.x, y: s.tap.y}));
 const ACTIONS = ['اختر الخدمة', 'اختر الطبيب', 'اختر اليوم', 'اختر الوقت', 'أرسل عبر واتساب'];
 const VALUES = ['استشارة أعصاب الأطفال', 'د. وفاء بني عرابة', 'الثلاثاء 3 نوفمبر', 'الفترة المسائية'];
 // summary bar slots (centres on the frame), right to left like the page: two rows

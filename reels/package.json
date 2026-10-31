@@ -6,7 +6,10 @@
   "scripts": {
     "studio": "remotion studio",
     "audio": "python3 audio/make_audio.py",
-    "render": "remotion render src/index.ts LaunchReel out/neuro-universe-launch-reel.mp4 --codec=h264 --crf=17 --audio-bitrate=320k"
+    "render": "remotion render src/index.ts LaunchReel out/neuro-universe-launch-reel.mp4 --codec=h264 --crf=17 --audio-bitrate=320k",
+    "render:studio": "remotion render StudioReel out/neuro-universe-studio.mp4 --crf=16",
+    "cover:studio": "remotion still StudioCover out/neuro-universe-studio-cover.png",
+    "audio:studio": "python3 audio/studio_mix.py"
   },
   "dependencies": {
     "@remotion/cli": "4.0.539",

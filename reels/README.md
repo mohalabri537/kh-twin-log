@@ -1,4 +1,34 @@
-# Neuro Universe Clinic: website launch reel
+# Neuro Universe Clinic: website reels
+
+## Studio cut (`StudioReel`, current)
+
+A calm, editorial 31-second Reel (1080×1920, 30 fps, Arabic): paper-white, generous space, light type, one idea per
+shot, realistic devices, no effects for their own sake. Cut to a 90 BPM score (a beat is 20 frames, a bar 80);
+the score is trimmed so its first downbeat is frame 0 and its closing chord lands on the logo (frame 800).
+
+| Time | Shot |
+|---|---|
+| 0–5.3 s | «موقعنا الجديد»: a phone rises into the empty page showing the homepage. |
+| 5.3–11.3 s | 01 الأطباء: each doctor as on the site (cut-out portrait over the drifting brand light, head above the frame), three beats each. |
+| 11.3–15.3 s | 02 الأعراض والأمراض: the guide scrolls past the red 9999 box and the topics. |
+| 15.3–20.7 s | 03 ألعاب الدماغ: a colour word in another colour, alone on the page («سمِّ لون الحبر، لا الكلمة»), settles into the real Stroop screen; then reaction time and visual memory. |
+| 20.7–24.7 s | 04 الحجز: the real form, a choice on each beat, set beside it as a quiet list. |
+| 24.7–26.7 s | 05 كل الشاشات: a laptop and a phone, the same homepage on both. |
+| 26.7–31 s | On the closing chord: logo, name, address; then the page empties so the loop restarts cleanly. |
+
+- `src/studio/plan.ts`: scene timing and the music take. `src/studio/ui.tsx`: paper, type, easing. `src/studio/devices.tsx`:
+  the phone (Pro Max-class: metal rim, Dynamic Island, side buttons, status bar, Safari's address bar) and the 16-inch
+  laptop (notch, menu bar, browser window, hinge and base), drawn in CSS with no logos or trademarks.
+- Music: ElevenLabs Music (eleven_music_v2_5), four takes of one brief (kept locally in `public/audio/studio/candidates/`); take A is
+  used (most air; resolves at 27 s) and saved as `public/audio/studio/score.mp3`. `python3 audio/analyse_takes.py <takes>` measures tempo, level and endings;
+  `npm run audio:studio` mixes it to the cut at -14 LUFS (`public/audio/studio/studio.wav`). No sound effects.
+- `npm run render:studio`, `npm run cover:studio`.
+- Captures: as below, plus `node scripts/capture-new.js public/cap` (the games being played, the conditions pages,
+  the games hub). `node scripts/stills.mjs StudioReel <dir> <frame>...` renders full-size stills for checking.
+
+---
+
+## Launch cut (`LaunchReel`, earlier)
 
 A 30.5-second Instagram Reel (1080×1920, 30 fps, Arabic) announcing **neurouniverse.om**, built with [Remotion](https://remotion.dev).
 Everything shown of the site is the real site, captured from its code. Every cut, tap and effect lands on the 120 BPM beat.
