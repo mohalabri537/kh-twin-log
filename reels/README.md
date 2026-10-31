@@ -17,8 +17,12 @@ One idea per shot, a slow camera move, one line of type; shots dissolve on the d
 | 24–26.7 s | «على كل شاشة.»: a laptop and a phone on the floor, the same homepage on both. |
 | 26.7–31 s | Logo, name and address; then the backdrop alone, so the loop restarts cleanly. |
 
-- `src/three/Phone3D.tsx`, `src/three/Laptop3D.tsx`: devices modelled from real proportions (no logos or trademarks).
-  `src/three/stage.tsx`: the studio light (softboxes baked into an environment map), soft shadows, shape helpers.
+- `src/three/Phone3D.tsx`, `src/three/Laptop3D.tsx`: devices modelled from real proportions (no logos or trademarks),
+  with surface texture: brushed highlights on the phone's band, frosted back glass, bead-blasted aluminium and matte keys.
+  `src/three/stage.tsx`: the light. A photographed studio, Poly Haven's "Studio Small 09" (CC0, polyhaven.com;
+  `public/hdri/studio_small_09.png`, converted from the 2K .hdr 1.5 stops darker), wrapped round the scene with added
+  softboxes and baked into an environment map; a key light casting soft shadows; neutral filmic tone mapping.
+  The 3D is drawn at 2160 x 3840 and scaled down (supersampling), so edges are smooth.
   `src/three/screen.ts`: paints each recorded frame (with a status bar or a browser bar) onto the screens.
   `src/three/Film.tsx`: the shots, type and backdrop.
 - Recordings: serve the website on port 8765, then `node scripts/record-site.js public/rec` (phone: a sharp screenshot per

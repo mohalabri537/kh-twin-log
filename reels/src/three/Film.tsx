@@ -6,7 +6,7 @@ import {LOGO_D, LOGO_VB} from '../logoPath';
 import {AR, C, EN} from '../theme';
 import {Laptop3D} from './Laptop3D';
 import {Phone3D} from './Phone3D';
-import {SoftShadow, Studio} from './stage';
+import {ShadowFloor, SoftShadow, Studio} from './stage';
 
 // The website film: 31 s, cut to the 90 BPM score (a beat is 20 frames; the closing chord is frame 800). Real 3D devices
 // on the website's own light, grainy violet backdrop, each playing a recording of the live site. One idea per shot,
@@ -81,9 +81,9 @@ const Camera: React.FC<{pos: [number, number, number]; look: [number, number, nu
 const Stage: React.FC<{children: React.ReactNode; pos?: [number, number, number]; look?: [number, number, number]; fov?: number}> = ({children, pos = [0, 0, 6], look = [0, 0, 0], fov = 26}) => (
   // drawn at twice the size and scaled down (supersampling: each pixel averages four), so edges come out smooth
   <div style={{position: 'absolute', left: 0, top: 0, width: 2160, height: 3840, transform: 'scale(0.5)', transformOrigin: '0 0'}}>
-    <ThreeCanvas width={2160} height={3840} camera={{fov, position: pos}} gl={{antialias: true, alpha: true}}>
+    <ThreeCanvas width={2160} height={3840} shadows="soft" camera={{fov, position: pos}} gl={{antialias: true, alpha: true}}>
       <Camera pos={pos} look={look} />
-      <Studio tone="light" exposure={1.0} />
+      <Studio exposure={1.0} turn={0.6} />
       {children}
     </ThreeCanvas>
   </div>
@@ -121,8 +121,9 @@ const Screens: React.FC<{f: number}> = ({f}) => {
       <Stage pos={[lerp(0.3, -0.1, m), 3.9, 16.8 - m * 0.6]} look={[-0.2, 1.7, 0]} fov={30}>
         <group rotation={[0, lerp(0.36, 0.3, m), 0]} position={[-0.45, 0, -0.2]}>
           <Laptop3D rec="desk-home" frames={186} start={70} />
-          <SoftShadow w={5.6} d={3.8} opacity={0.3} position={[0, 0.002, 0.15]} />
+          <SoftShadow w={5.6} d={3.8} opacity={0.22} position={[0, 0.002, 0.15]} />
         </group>
+        <ShadowFloor opacity={0.2} />
         <group position={[1.15, 0, 2.0]} rotation={[0, lerp(-0.42, -0.3, m), 0]}>
           <Phone3D rec="phone-home" frames={102} start={0} rate={0.5} position={[0, 0.815, 0]} />
           <SoftShadow w={1.4} d={0.5} opacity={0.35} position={[0, 0.002, 0]} />

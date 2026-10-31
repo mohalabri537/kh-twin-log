@@ -1,44 +1,90 @@
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo} from 'react';
+import {continueRender, delayRender, staticFile} from 'remotion';
 import {useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 
-// A product-photography stage. The light comes from large softboxes baked into an environment map, so metal and glass
-// pick up long, clean highlights. 'light': a bright white studio with a few dark flags for contrast (silver reads as
-// silver on a light set); 'dark': a black studio lit only by the softboxes.
-export const Studio: React.FC<{exposure?: number; tone?: 'light' | 'dark'}> = ({exposure = 1, tone = 'light'}) => {
-  const {gl} = useThree();
-  gl.toneMapping = THREE.ACESFilmicToneMapping;
+// A product-photography stage, lit by a photographed studio: Poly Haven's "Studio Small 09" (CC0), a white cyclorama
+// with octagonal softboxes and a dark side, as an environment map (reflections and soft light from every direction),
+// plus a key light that casts soft shadows. Neutral filmic tone mapping keeps colours true.
+// The studio photograph as an ordinary image (public/hdri/studio_small_09.png, converted from the .hdr 1.5 stops darker so
+// the softboxes keep their detail), wrapped round a sphere and baked into the environment, brightened back by 2^1.5.
+// (The headless renderer cannot turn half-float .hdr images into an environment.)
+export const STUDIO_IMG = 'hdri/studio_small_09.png';
+let imgLoad: Promise<THREE.Texture> | null = null;
+const loadImg = () => (imgLoad ??= new Promise((res, rej) => new THREE.TextureLoader().load(staticFile(STUDIO_IMG), res, undefined, rej)));
+
+export const Studio: React.FC<{exposure?: number; turn?: number; intensity?: number; shadow?: boolean}> = ({exposure = 1, turn = 0, intensity = 1, shadow = true}) => {
+  const {gl, scene, advance} = useThree();
+  gl.toneMapping = THREE.NeutralToneMapping;
   gl.toneMappingExposure = exposure;
   gl.outputColorSpace = THREE.SRGBColorSpace;
-  const env = useMemo(() => {
-    const room = new THREE.Scene();
-    const wall = tone === 'light' ? 0.3 : 0.02; // mid-grey walls: silver keeps its light-to-dark gradients
-    room.add(new THREE.Mesh(new THREE.BoxGeometry(30, 30, 30), new THREE.MeshBasicMaterial({color: new THREE.Color(wall, wall, wall * 1.03), side: THREE.BackSide})));
-    const panel = (w: number, h: number, pos: [number, number, number], rot: [number, number, number], k: number) => {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({color: new THREE.Color(k, k, k * 1.02), side: THREE.DoubleSide}));
-      m.position.set(...pos); m.rotation.set(...rot); room.add(m);
-    };
-    if (tone === 'light') {
-      panel(4, 14, [-7, 1, 4], [0, Math.PI / 2.4, 0], 3.2); // tall softbox, left
-      panel(4, 14, [7, 1, 3], [0, -Math.PI / 2.4, 0], 2.4); // tall softbox, right
-      panel(12, 4, [0, 9, 2], [Math.PI / 2, 0, 0], 2.6); // overhead
-      panel(3, 14, [-4, 0, -7], [0, 0.4, 0], 0.03); // dark flags, so edges have definition
-      panel(3, 14, [5, 0, -7], [0, -0.4, 0], 0.03);
-      panel(14, 3, [0, -8, 0], [Math.PI / 2, 0, 0], 0.08);
-      panel(16, 7, [0, 5, -9], [0.35, 0, 0], 1.5); // a broad soft light high behind: what a laptop's deck reflects
-    } else {
-      panel(3, 12, [-7, 1, 3], [0, Math.PI / 2.4, 0], 6);
-      panel(3, 12, [7, 1, 2], [0, -Math.PI / 2.4, 0], 4);
-      panel(10, 2.5, [0, 8, 2], [Math.PI / 2, 0, 0], 2.5);
-      panel(8, 1.2, [0, -2, -8], [0, 0, 0], 1.6);
-    }
-    const pm = new THREE.PMREMGenerator(gl);
-    const tex = pm.fromScene(room, 0.02).texture;
-    pm.dispose();
-    return tex;
-  }, [gl, tone]);
-  // set on the scene before its first frame is drawn
-  return <primitive attach="environment" object={env} />;
+  useEffect(() => {
+    const handle = delayRender('studio light');
+    loadImg().then((img) => {
+      img.colorSpace = THREE.SRGBColorSpace;
+      img.mapping = THREE.EquirectangularReflectionMapping;
+      const room = new THREE.Scene();
+      const mat = new THREE.MeshBasicMaterial({map: img, side: THREE.BackSide, toneMapped: false});
+      mat.color.setScalar(Math.pow(2, 1.5));
+      const sphere = new THREE.Mesh(new THREE.SphereGeometry(10, 96, 48), mat);
+      sphere.scale.x = -1; // seen from inside, not mirrored
+      room.add(sphere);
+      // the softboxes a product photographer adds: a broad one overhead (what flat tops like a laptop's deck reflect),
+      // tall ones either side, and a broad soft light high behind
+      const panel = (w: number, h: number, pos: [number, number, number], rot: [number, number, number], k: number) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({color: new THREE.Color(k, k, k * 1.02), side: THREE.DoubleSide, toneMapped: false}));
+        m.position.set(...pos); m.rotation.set(...rot); room.add(m);
+      };
+      panel(9, 5, [0, 6.5, 1], [Math.PI / 2, 0, 0], 2.6);
+      panel(3, 9, [-6, 1, 3], [0, Math.PI / 2.4, 0], 2.4);
+      panel(3, 9, [6, 1, 2], [0, -Math.PI / 2.4, 0], 1.8);
+      panel(12, 5, [0, 4, -7], [0.35, 0, 0], 1.2);
+      const pm = new THREE.PMREMGenerator(gl);
+      scene.environment = pm.fromScene(room, 0.01).texture; // set directly, so the very next draw has it
+      pm.dispose();
+      // draw again with the light in place before the frame is captured
+      requestAnimationFrame(() => { advance(performance.now()); continueRender(handle); });
+    }, () => continueRender(handle));
+  }, [gl, scene, advance]);
+  scene.environmentRotation.set(0, turn, 0);
+  scene.environmentIntensity = intensity;
+  return (
+    <>
+      {shadow && (
+        <directionalLight position={[-3, 7, 5]} intensity={0.9} castShadow shadow-mapSize={[4096, 4096]} shadow-radius={8} shadow-bias={-0.0004}
+          shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={5} shadow-camera-bottom={-5} shadow-camera-near={0.5} shadow-camera-far={25} />
+      )}
+    </>
+  );
+};
+
+// A floor that only shows the shadows falling on it (the backdrop shows through everywhere else).
+export const ShadowFloor: React.FC<{size?: number; opacity?: number} & JSX.IntrinsicElements['mesh']> = ({size = 14, opacity = 0.22, ...m}) => (
+  <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow {...m}>
+    <planeGeometry args={[size, size]} />
+    <shadowMaterial transparent opacity={opacity} />
+  </mesh>
+);
+
+// Surface textures, drawn once: fine random grain, softened, for roughness and bump maps.
+//  - 'bead': bead-blasted aluminium (laptop): even, very fine
+//  - 'frost': frosted back glass: a little coarser
+export const grain = (kind: 'bead' | 'frost', size = 1024) => {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(size, size);
+  let s = kind === 'bead' ? 7 : 13;
+  const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  for (let i = 0; i < size * size; i++) {
+    const v = 128 + (rnd() - 0.5) * (kind === 'bead' ? 90 : 140);
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  g.filter = `blur(${kind === 'bead' ? 0.6 : 1.1}px)`; g.drawImage(c, 0, 0); g.filter = 'none';
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(kind === 'bead' ? 6 : 3, kind === 'bead' ? 6 : 3);
+  return t;
 };
 
 // A soft contact shadow: a blurred ellipse lying under an object (radius in scene units).

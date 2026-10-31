@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {useScreen} from './screen';
-import {rrect, shapeGeo} from './stage';
+import {grain, rrect, shapeGeo} from './stage';
 
 // A phone modelled from real proportions (77.6 x 163 x 8.25 mm; 1 unit = 100 mm), no logos: a bevelled metal band,
 // black glass front with the screen and camera island, a glass back with a camera plateau. The screen plays a
@@ -21,11 +21,13 @@ export const Phone3D: React.FC<{rec: string; frames: number; rate?: number; star
     const plateau = new THREE.ExtrudeGeometry(rrect(0.33, 0.33, 0.07), {depth: 0.008, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 4, curveSegments: 16});
     return {body, glass, screen, island, plateau, sbH};
   }, []);
+  const frost = useMemo(() => grain('frost'), []);
   const z = T / 2;
   return (
     <group {...g}>
-      <mesh geometry={geo.body}>
-        <meshPhysicalMaterial color={color} metalness={1} roughness={0.22} clearcoat={0.4} clearcoatRoughness={0.2} envMapIntensity={1.2} />
+      <mesh geometry={geo.body} castShadow receiveShadow>
+        {/* the band: polished metal with brushed highlights */}
+        <meshPhysicalMaterial color={color} metalness={1} roughness={0.2} anisotropy={0.65} clearcoat={0.5} clearcoatRoughness={0.12} envMapIntensity={1.15} />
       </mesh>
       {/* black glass front */}
       <mesh geometry={geo.glass} position={[0, 0, z + 0.0006]}>
@@ -44,7 +46,7 @@ export const Phone3D: React.FC<{rec: string; frames: number; rate?: number; star
       </mesh>
       {/* back: frosted glass and the camera plateau */}
       <mesh geometry={geo.glass} position={[0, 0, -z - 0.0006]} rotation={[0, Math.PI, 0]}>
-        <meshPhysicalMaterial color={color} roughness={0.55} metalness={0.2} clearcoat={0.6} />
+        <meshPhysicalMaterial color={color} roughness={0.5} roughnessMap={frost} bumpMap={frost} bumpScale={0.0006} metalness={0.25} clearcoat={0.5} clearcoatRoughness={0.35} />
       </mesh>
       <group position={[0.17, 0.6, -z - 0.002]} rotation={[0, Math.PI, 0]}>
         <mesh geometry={geo.plateau}>

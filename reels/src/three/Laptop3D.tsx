@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import * as THREE from 'three';
 import {useScreen} from './screen';
-import {rrect, shapeGeo} from './stage';
+import {grain, rrect, shapeGeo} from './stage';
 
 // A 16-inch laptop modelled from real measurements (355.7 x 248.1 mm; a 345 x 223 mm display; 1 unit = 100 mm), with no
 // logos. Silver aluminium base with black keys set into the deck (their own matte material), a half-height function row,
@@ -88,13 +88,16 @@ export const Laptop3D: React.FC<{rec: string; frames: number; rate?: number; sta
     return {base, lid, glass, screen, notch};
   }, []);
   const deck = useMemo(deckTexture, []);
+  const bead = useMemo(() => grain('bead'), []);
+  // bead-blasted aluminium: an even, very fine grain in how rough and how flat the surface is
+  const alu = {...ALU, roughnessMap: bead, bumpMap: bead, bumpScale: 0.0008};
   const keys = useMemo(keyMask, []);
   return (
     <group {...g}>
-      <mesh geometry={geo.base}><meshPhysicalMaterial {...ALU} /></mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, BT + 0.0008, 0]}>
+      <mesh geometry={geo.base} castShadow receiveShadow><meshPhysicalMaterial {...alu} /></mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, BT + 0.0008, 0]} receiveShadow>
         <planeGeometry args={[BW - 0.03, BD - 0.03]} />
-        <meshPhysicalMaterial map={deck} metalness={0.85} roughness={0.34} envMapIntensity={1.2} />
+        <meshPhysicalMaterial map={deck} metalness={0.85} roughness={0.36} roughnessMap={bead} bumpMap={bead} bumpScale={0.0008} envMapIntensity={1.2} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, BT + 0.0028, 0]}>
         <planeGeometry args={[BW - 0.03, BD - 0.03]} />
@@ -107,7 +110,7 @@ export const Laptop3D: React.FC<{rec: string; frames: number; rate?: number; sta
       </mesh>
       {/* the lid, hinged at the back edge of the base */}
       <group position={[0, BT + 0.02, -BD / 2 + 0.05]} rotation={[-(open - Math.PI / 2), 0, 0]}>
-        <mesh geometry={geo.lid}><meshPhysicalMaterial {...ALU} /></mesh>
+        <mesh geometry={geo.lid} castShadow receiveShadow><meshPhysicalMaterial {...alu} /></mesh>
         <mesh geometry={geo.glass}><meshPhysicalMaterial color="#010102" roughness={0.03} metalness={0} clearcoat={1} clearcoatRoughness={0.02} envMapIntensity={1.5} /></mesh>
         <mesh geometry={geo.screen}><meshBasicMaterial map={tex} toneMapped={false} /></mesh>
         <mesh geometry={geo.notch}><meshBasicMaterial color="#010102" /></mesh>
