@@ -41,7 +41,9 @@ export const useScreen = ({rec, frames, rate = 1, start = 0, w, h, statusBar = 0
   const [, setDrawn] = useState(-1);
   const {advance} = useThree();
   useEffect(() => {
-    const handle = delayRender(`screen ${rec} ${i}`);
+    const handle = delayRender(`screen ${rec} ${i}`, {timeoutInMilliseconds: 120000});
+    let done = false;
+    const finish = () => { if (!done) { done = true; continueRender(handle); } };
     const img = new Image();
     img.onload = () => {
       const g = canvas.getContext('2d')!;
@@ -52,10 +54,11 @@ export const useScreen = ({rec, frames, rate = 1, start = 0, w, h, statusBar = 0
       else if (statusBar) drawStatusBar(g, w, top);
       tex.needsUpdate = true;
       setDrawn(i);
-      // draw the 3D frame again with the new picture before the frame is captured
-      requestAnimationFrame(() => { advance(performance.now()); continueRender(handle); });
+      // draw the 3D frame again with the new picture before the frame is captured; never leave the frame waiting
+      requestAnimationFrame(() => { try { advance(performance.now()); } finally { finish(); } });
+      setTimeout(finish, 3000);
     };
-    img.onerror = () => continueRender(handle);
+    img.onerror = () => { console.warn(`screen ${rec} ${i} failed to load, retrying`); setTimeout(() => { img.src = img.src.split('?')[0] + '?r=' + Date.now(); }, 500); };
     img.src = staticFile(`rec/${rec}/${pad(i)}.jpg`);
   }, [i, rec, canvas, tex, w, h, statusBar, chrome]);
   return tex;
