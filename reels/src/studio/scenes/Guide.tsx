@@ -14,7 +14,7 @@ export const Guide: React.FC = () => {
   return (
     <AbsoluteFill>
       <Heading f={f} at={2} n="02" label="الأعراض والأمراض" title="دليل واضح" sub="ومتى تتصل بالرقم 9999" />
-      <Phone src="cond-hub.jpg" k={1.22} cx={540} top={lerp(800, 720, rise)} scrollY={scroll} o={Math.min(1, rise * 1.4)} />
+      <Phone src="cond-hub.jpg" k={1.42} cx={540} top={lerp(700, 610, rise)} scrollY={scroll} o={Math.min(1, rise * 1.4)} />
     </AbsoluteFill>
   );
 };

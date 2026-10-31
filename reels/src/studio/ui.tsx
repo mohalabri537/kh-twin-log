@@ -50,12 +50,23 @@ export const Line: React.FC<{f: number; at: number; children: React.ReactNode; s
   );
 };
 
-// A section heading, right-aligned on the grid: a small index and label, a light title, an optional subline.
+// One word, rising into place from behind a mask with a slight settle.
+const Words: React.FC<{f: number; at: number; out?: number; children: React.ReactNode}> = ({f, at, out, children}) => {
+  const t = outExpo(prog(f, at, 22));
+  const o = out === undefined ? 1 : 1 - inOut(prog(f, out, 14));
+  return (
+    <span style={{display: 'inline-block', overflow: 'hidden', padding: '0.3em 0 0.75em', margin: '-0.3em 0 -0.75em'}}>
+      <span style={{display: 'inline-block', transform: `translateY(${(1 - t) * 110}%) scale(${1 + (1 - t) * 0.08})`, opacity: Math.min(1, t * 1.6) * o}}>{children}</span>
+    </span>
+  );
+};
+
+// A section heading, centred: a small index and label, a light title, an optional subline.
 export const Heading: React.FC<{f: number; at?: number; n?: string; label?: string; title: string; sub?: string; out?: number; top?: number}> = ({f, at = 0, n, label, title, sub, out, top = 190}) => (
-  <div dir="rtl" style={{position: 'absolute', top, right: M, left: M, textAlign: 'right'}}>
+  <div dir="rtl" style={{position: 'absolute', top, right: M, left: M, textAlign: 'center'}}>
     {label && (
       <Line f={f} at={at} out={out}>
-        <div style={{display: 'flex', alignItems: 'center', gap: 18, fontFamily: AR, fontWeight: 400, fontSize: 32, color: GREY}}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, fontFamily: AR, fontWeight: 400, fontSize: 32, color: GREY}}>
           {n && <span style={{fontFamily: EN, fontWeight: 400, fontSize: 26, letterSpacing: 2, color: VIOLET}}>{n}</span>}
           {n && <span style={{width: 48, height: 1.5, background: 'rgba(29,29,31,.25)'}} />}
           <span>{label}</span>
@@ -64,9 +75,11 @@ export const Heading: React.FC<{f: number; at?: number; n?: string; label?: stri
     )}
     <div style={{height: label ? 26 : 0}} />
     {title.split('\n').map((l, i) => (
-      <Line key={i} f={f} at={at + 6 + i * 5} out={out}>
-        <div style={{fontFamily: AR, fontWeight: 300, fontSize: 104, lineHeight: 1.22, color: INK}}>{l}</div>
-      </Line>
+      <div key={i} style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0 0.26em', fontFamily: AR, fontWeight: 500, fontSize: 96, lineHeight: 1.22, color: INK}}>
+        {l.split(' ').map((w, j) => (
+          <Words key={j} f={f} at={at + 6 + i * 5 + j * 4} out={out}>{w}</Words>
+        ))}
+      </div>
     ))}
     {sub && (
       <Line f={f} at={at + 16} out={out}>

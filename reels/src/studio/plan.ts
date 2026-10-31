@@ -7,12 +7,12 @@ export const XF = 12;
 export const MUSIC = {file: 'audio/studio/studio.wav', take: 'public/audio/studio/score.mp3', trim: 0.62};
 
 export const SCENES = [
-  {id: 'site', from: 0, len: 160}, // the new site on a phone
+  {id: 'site', from: 0, len: 160}, // the new site: a foldable phone opens
   {id: 'doctors', from: 160, len: 180}, // the doctors, one portrait at a time, three beats each
   {id: 'guide', from: 340, len: 120}, // the symptoms and conditions guide
   {id: 'games', from: 460, len: 160}, // brain games: name the ink, then the three games
-  {id: 'booking', from: 620, len: 120}, // booking in a few steps, a choice on every beat
-  {id: 'screens', from: 740, len: 60}, // every screen
+  {id: 'booking', from: 620, len: 100}, // booking in a few steps, a choice on every beat
+  {id: 'screens', from: 720, len: 80}, // every screen: desktop and phone
   {id: 'close', from: 800, len: 130}, // logo, name, address, on the closing chord
 ] as const;
 

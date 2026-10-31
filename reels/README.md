@@ -8,17 +8,20 @@ the score is trimmed so its first downbeat is frame 0 and its closing chord land
 
 | Time | Shot |
 |---|---|
-| 0–5.3 s | «موقعنا الجديد»: a phone rises into the empty page showing the homepage. |
+| 0–5.3 s | «موقعنا الجديد.»: a book-style foldable, closed, shows the site on its outer screen; it opens in about a second and the camera moves in until the website fills the frame. |
 | 5.3–11.3 s | 01 الأطباء: each doctor as on the site (cut-out portrait over the drifting brand light, head above the frame), three beats each. |
-| 11.3–15.3 s | 02 الأعراض والأمراض: the guide scrolls past the red 9999 box and the topics. |
-| 15.3–20.7 s | 03 ألعاب الدماغ: a colour word in another colour, alone on the page («سمِّ لون الحبر، لا الكلمة»), settles into the real Stroop screen; then reaction time and visual memory. |
-| 20.7–24.7 s | 04 الحجز: the real form, a choice on each beat, set beside it as a quiet list. |
-| 24.7–26.7 s | 05 كل الشاشات: a laptop and a phone, the same homepage on both. |
+| 11.3–15.3 s | 02 الأعراض والأمراض: the guide, large, scrolling past the red 9999 box and the topics. |
+| 15.3–20.7 s | 03 ألعاب الدماغ: three colour words in the wrong ink, one per beat («سمِّ لون الحبر، لا الكلمة»); the last settles into the real Stroop screen, then reaction time and visual memory. |
+| 20.7–24 s | 04 الحجز: the real form, a choice on each beat, set beside it as a quiet list. |
+| 24–26.7 s | 05 كل الشاشات: the desktop homepage in a browser window, the phone in front. |
 | 26.7–31 s | On the closing chord: logo, name, address; then the page empties so the loop restarts cleanly. |
 
+Headlines are centred and land word by word; scenes rise in from below as the previous one leaves upwards.
+The website is the subject: devices only frame it, and carry no logos or trademarks.
+
 - `src/studio/plan.ts`: scene timing and the music take. `src/studio/ui.tsx`: paper, type, easing. `src/studio/devices.tsx`:
-  the phone (Pro Max-class: metal rim, Dynamic Island, side buttons, status bar, Safari's address bar) and the 16-inch
-  laptop (notch, menu bar, browser window, hinge and base), drawn in CSS with no logos or trademarks.
+  the phone (metal rim, camera island, side buttons, status bar, the browser's address bar), the foldable (real 3D
+  hinge; `scripts/capture-fold.js` captures its two screens) and a desktop browser window, drawn in CSS.
 - Music: ElevenLabs Music (eleven_music_v2_5), four takes of one brief (kept locally in `public/audio/studio/candidates/`); take A is
   used (most air; resolves at 27 s) and saved as `public/audio/studio/score.mp3`. `python3 audio/analyse_takes.py <takes>` measures tempo, level and endings;
   `npm run audio:studio` mixes it to the cut at -14 LUFS (`public/audio/studio/studio.wav`). No sound effects.

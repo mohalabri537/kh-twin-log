@@ -13,13 +13,14 @@ import {inOut, Paper, prog, SceneStart} from './ui';
 // The studio cut of the website reel: calm, editorial, one idea per shot (see plan.ts).
 const VIEW: Record<string, React.FC> = {site: Site, doctors: Doctors, guide: Guide, games: Games, booking: Booking, screens: Screens, close: Close};
 
-// Each scene starts XF frames early and ends XF late, fading over its neighbours on the paper.
+// Each scene starts XF frames early and ends XF late: it rises in from below as the one before leaves upwards.
 const Fade: React.FC<{len: number; first: boolean; last: boolean; children: React.ReactNode}> = ({len, first, last, children}) => {
   const g = useCurrentFrame() - (first ? 0 : XF); // the scene's own frame
-  const o = (first ? 1 : inOut(prog(g, -XF, XF * 2))) * (last ? 1 : 1 - inOut(prog(g, len - XF, XF * 2)));
+  const into = first ? 1 : inOut(prog(g, -XF, XF * 2));
+  const away = last ? 0 : inOut(prog(g, len - XF, XF * 2));
   return (
     <SceneStart.Provider value={first ? 0 : XF}>
-      <AbsoluteFill style={{opacity: o}}>{children}</AbsoluteFill>
+      <AbsoluteFill style={{opacity: into * (1 - away), transform: `translateY(${(1 - into) * 110 - away * 110}px)`}}>{children}</AbsoluteFill>
     </SceneStart.Provider>
   );
 };

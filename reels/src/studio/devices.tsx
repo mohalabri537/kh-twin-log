@@ -2,10 +2,9 @@ import React from 'react';
 import {Img, staticFile} from 'remotion';
 import {EN} from '../theme';
 
-// Realistic devices for the studio cut, drawn in CSS from real proportions (no logos or trademarks):
-// a Pro Max-class phone (silver metal rim, black border, Dynamic Island, side buttons, iOS status bar and Safari's
-// floating address bar) and a 16-inch laptop (aluminium lid with the camera notch, menu bar, browser window, hinge and
-// base seen from the front). Captured pages fill the screens.
+// Devices for the studio cut, drawn in CSS from real proportions (no logos or trademarks). They only frame the
+// website: a phone (metal rim, black border, camera island, status bar and the browser's floating address bar), a
+// book-style foldable, and a plain desktop browser window. Captured pages fill the screens.
 
 // ---------------------------------------------------------------- phone
 // The web page is 390 CSS px wide; the screen is 390 x 844 CSS px; k = frame px per CSS px.
@@ -34,8 +33,10 @@ export const Phone: React.FC<{
   o?: number;
   lift?: number;
   tilt?: number; // degrees of turn, for a touch of depth
+  rx?: number; // degrees of pitch
+  glint?: number; // 0..1: a band of light sweeping once across the glass
   children?: React.ReactNode; // drawn in page coordinates
-}> = ({src, k, cx, top, scrollY = 0, layers = [], o = 1, lift = 0, tilt = 0, children}) => {
+}> = ({src, k, cx, top, scrollY = 0, layers = [], o = 1, lift = 0, tilt = 0, rx = 0, glint = 0, children}) => {
   const b = phoneBox(k);
   const inner = b.rim + b.border;
   const page = (s: string, y: number, op: number, key: string) => (
@@ -45,7 +46,7 @@ export const Phone: React.FC<{
     <div style={{position: 'absolute', [side]: -b.sw * 0.007, top: b.h * y, width: b.sw * 0.012, height: b.h * h, borderRadius: b.sw * 0.006, background: 'linear-gradient(90deg, #bfc1c4, #f1f1f2 50%, #a7a9ad)', boxShadow: '0 0 0 0.5px rgba(0,0,0,.18)'}} />
   );
   return (
-    <div style={{position: 'absolute', left: cx - b.w / 2, top, width: b.w, height: b.h, opacity: o, transform: tilt ? `perspective(3000px) rotateY(${tilt}deg)` : undefined}}>
+    <div style={{position: 'absolute', left: cx - b.w / 2, top, width: b.w, height: b.h, opacity: o, transform: tilt || rx ? `perspective(3000px) rotateX(${rx}deg) rotateY(${tilt}deg)` : undefined}}>
       {/* contact shadow on the paper */}
       <div style={{position: 'absolute', left: '8%', right: '8%', bottom: -b.h * 0.025, height: b.h * 0.05, borderRadius: '50%', background: 'rgba(29,29,31,.30)', filter: `blur(${b.w * 0.05}px)`}} />
       {btn('left', 0.155, 0.045)}
@@ -65,6 +66,7 @@ export const Phone: React.FC<{
             <SafariBar k={k} />
             {/* the faintest reflection across the glass */}
             <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(118deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 38%)'}} />
+            <Glint t={glint} />
           </div>
           {/* Dynamic Island */}
           <div style={{position: 'absolute', left: '50%', top: b.border + 11 * k, width: 111 * k, height: 33 * k, marginLeft: -55.5 * k, borderRadius: 20 * k, background: '#000'}}>
@@ -76,10 +78,16 @@ export const Phone: React.FC<{
   );
 };
 
+// A band of light sweeping once across the glass (t: 0 → 1), as a device settles.
+export const Glint: React.FC<{t: number}> = ({t}) =>
+  t > 0 && t < 1 ? (
+    <div style={{position: 'absolute', inset: '-20% -60%', pointerEvents: 'none', background: `linear-gradient(105deg, rgba(255,255,255,0) ${t * 100 - 14}%, rgba(255,255,255,.55) ${t * 100}%, rgba(255,255,255,0) ${t * 100 + 14}%)`, mixBlendMode: 'screen'}} />
+  ) : null;
+
 // iOS status bar: time, signal, Wi-Fi, battery (CSS px, scaled by k)
-const StatusBar: React.FC<{k: number}> = ({k}) => (
-  <div style={{position: 'absolute', left: 0, top: 0, width: 390 * k, height: SB * k, background: '#fff'}}>
-    <div style={{position: 'absolute', left: 0, top: 0, width: 390, height: SB, transform: `scale(${k})`, transformOrigin: '0 0'}}>
+export const StatusBar: React.FC<{k: number; vw?: number; h?: number}> = ({k, vw = 390, h = SB}) => (
+  <div style={{position: 'absolute', left: 0, top: 0, width: vw * k, height: h * k, background: '#fff'}}>
+    <div style={{position: 'absolute', left: 0, top: (h - SB) / 2, width: vw, height: SB, transform: `scale(${k})`, transformOrigin: '0 0'}}>
       <div style={{position: 'absolute', left: 42, top: 19, fontFamily: EN, fontWeight: 600, fontSize: 16.5, letterSpacing: -0.2, color: '#000'}}>9:41</div>
       <div style={{position: 'absolute', right: 30, top: 22, display: 'flex', alignItems: 'center', gap: 6}}>
         <svg width="18" height="11" viewBox="0 0 18 11">{[0, 1, 2, 3].map((i) => <rect key={i} x={i * 4.7} y={8 - i * 2.4} width="3.2" height={3 + i * 2.4} rx="0.8" fill="#000" />)}</svg>
@@ -91,10 +99,10 @@ const StatusBar: React.FC<{k: number}> = ({k}) => (
 );
 
 // Safari's floating address bar and the home indicator
-const SafariBar: React.FC<{k: number}> = ({k}) => (
-  <div style={{position: 'absolute', left: 0, bottom: 0, width: 390, height: 110, transform: `scale(${k})`, transformOrigin: '0 100%'}}>
+export const SafariBar: React.FC<{k: number; vw?: number; pill?: number}> = ({k, vw = 390, pill}) => (
+  <div style={{position: 'absolute', left: 0, bottom: 0, width: vw, height: 110, transform: `scale(${k})`, transformOrigin: '0 100%'}}>
     <div style={{position: 'absolute', left: 0, right: 0, bottom: 0, height: 110, background: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.85) 55%)'}} />
-    <div style={{position: 'absolute', left: 14, right: 14, bottom: 30, height: 48, borderRadius: 24, background: 'rgba(250,250,252,.94)', boxShadow: '0 6px 22px rgba(0,0,0,.12), inset 0 0 0 0.5px rgba(0,0,0,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6}}>
+    <div style={{position: 'absolute', left: pill ? (vw - pill) / 2 : 14, right: pill ? (vw - pill) / 2 : 14, bottom: 30, height: 48, borderRadius: 24, background: 'rgba(250,250,252,.94)', boxShadow: '0 6px 22px rgba(0,0,0,.12), inset 0 0 0 0.5px rgba(0,0,0,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6}}>
       <svg width="10" height="12" viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.5" fill="#3c3c43" /><path d="M2.8 5V3.6a2.2 2.2 0 0 1 4.4 0V5" fill="none" stroke="#3c3c43" strokeWidth="1.3" /></svg>
       <span style={{fontFamily: EN, fontWeight: 500, fontSize: 16, color: '#1c1c1e', letterSpacing: -0.1}}>neurouniverse.om</span>
     </div>
@@ -102,52 +110,81 @@ const SafariBar: React.FC<{k: number}> = ({k}) => (
   </div>
 );
 
-// ---------------------------------------------------------------- laptop
-// A 16-inch laptop seen from the front. `w` is the screen's width on the frame; the page (1440 x 900 CSS px) fills a
-// browser window under the menu bar.
-export const Laptop: React.FC<{src: string; w: number; cx: number; top: number; o?: number}> = ({src, w, cx, top, o = 1}) => {
-  const bezel = w * 0.018, edge = w * 0.006;
-  const sh = w / 1.547; // 3456 x 2234
-  const lidW = w + 2 * (bezel + edge), lidH = sh + 2 * edge + bezel * 2.2;
-  const menu = sh * 0.024, bar = sh * 0.056; // menu bar (the notch's height), browser toolbar
-  const pageH = sh - menu - bar;
-  const baseW = lidW * 1.12, baseH = lidW * 0.026;
+// ---------------------------------------------------------------- foldable phone
+// A book-style foldable, seen from the front. open = 0 (closed: the outer screen faces us) to 1 (flat open: the inner
+// screen spans both halves). The left half swings on the hinge towards the viewer, in real 3D, with the edge
+// thickness showing as it turns. Screens are CSS px: outer 420 x 590, inner 850 x 590; k = frame px per CSS px.
+const FOLD = {iw: 850, ih: 590, cw: 420, ch: 590, rim: 6.5, border: 7, r: 44, t: 20};
+export const Fold: React.FC<{open: number; k: number; cx: number; cy: number; rx?: number; ry?: number; scale?: number; o?: number; glint?: number; cover: string; inner: string}> = ({open, k, cx, cy, rx = 0, ry = 0, scale = 1, o = 1, glint = 0, cover, inner}) => {
+  const {iw, ih, cw, ch, rim, border, r, t} = FOLD;
+  const side = (rim + border) * k;
+  const hw = (iw / 2) * k + side, h = ih * k + 2 * side; // one half, outer size
+  const a = 180 * (1 - open); // left half's turn, degrees
+  const T = t * k; // thickness of one half
+  // keep the device centred: closed, it is one half wide
+  const shift = (-hw / 2) * (a / 180);
+  const half = (left: boolean, face: React.ReactNode, back?: React.ReactNode) => (
+    <div style={{position: 'absolute', left: left ? -hw : 0, top: -h / 2, width: hw, height: h, transformStyle: 'preserve-3d',
+      transformOrigin: left ? '100% 50%' : '0 50%', transform: left ? `translateZ(${T / 2}px) rotateY(${a}deg) translateZ(${-T / 2}px)` : undefined}}>
+      {/* inner face */}
+      <div style={{position: 'absolute', inset: 0, backfaceVisibility: 'hidden', borderRadius: left ? `${r * k}px 0 0 ${r * k}px` : `0 ${r * k}px ${r * k}px 0`, background: METAL, padding: left ? `${rim * k}px 0 ${rim * k}px ${rim * k}px` : `${rim * k}px ${rim * k}px ${rim * k}px 0`}}>
+        <div style={{position: 'relative', width: '100%', height: '100%', borderRadius: left ? `${(r - rim) * k}px 0 0 ${(r - rim) * k}px` : `0 ${(r - rim) * k}px ${(r - rim) * k}px 0`, background: '#050506', overflow: 'hidden'}}>{face}</div>
+      </div>
+      {/* back face: the outer screen on the left half, glass on the right */}
+      <div style={{position: 'absolute', inset: 0, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: left ? `0 ${r * k}px ${r * k}px 0` : `${r * k}px 0 0 ${r * k}px`, background: METAL, padding: rim * k}}>
+        <div style={{position: 'relative', width: '100%', height: '100%', borderRadius: (r - rim) * k, background: back ? '#050506' : 'linear-gradient(135deg,#e9e9ec,#cfd0d4)', overflow: 'hidden'}}>{back}</div>
+      </div>
+      {/* the outer edge, so the half has thickness as it turns */}
+      <div style={{position: 'absolute', top: r * k * 0.6, bottom: r * k * 0.6, [left ? 'left' : 'right']: -T / 2, width: T, background: 'linear-gradient(90deg, #a9abaf, #f2f2f3 45%, #b9bbbe)', transform: 'rotateY(90deg)'}} />
+    </div>
+  );
+  const innerHalf = (left: boolean) => (
+    <div style={{position: 'absolute', top: border * k, bottom: border * k, [left ? 'left' : 'right']: border * k, [left ? 'right' : 'left']: 0, overflow: 'hidden', borderRadius: left ? `${(r - rim - border) * k}px 0 0 ${(r - rim - border) * k}px` : `0 ${(r - rim - border) * k}px ${(r - rim - border) * k}px 0`, background: '#0b0b0d'}}>
+      <div style={{position: 'absolute', top: 0, [left ? 'left' : 'right']: 0, width: iw * k, height: ih * k, opacity: Math.min(1, open * 6)}}>
+        <Img src={staticFile(`cap/${inner}`)} style={{position: 'absolute', left: 0, top: 30 * k, width: iw * k}} />
+        <StatusBar k={k} vw={iw} h={30} />
+        <SafariBar k={k} vw={iw} pill={330} />
+        <Glint t={glint} />
+      </div>
+      {/* the crease */}
+      <div style={{position: 'absolute', top: 0, bottom: 0, [left ? 'right' : 'left']: 0, width: 10 * k, background: `linear-gradient(${left ? 270 : 90}deg, rgba(0,0,0,.10), rgba(0,0,0,0))`}} />
+    </div>
+  );
+  const coverScreen = (
+    <div style={{position: 'absolute', inset: border * k, borderRadius: (r - rim - border) * k, overflow: 'hidden', background: '#fff'}}>
+      <Img src={staticFile(`cap/${cover}`)} style={{position: 'absolute', left: 0, top: SB * k, width: cw * k}} />
+      <StatusBar k={k} vw={cw} />
+      <SafariBar k={k} vw={cw} />
+      <div style={{position: 'absolute', left: '50%', top: 11 * k, width: 100 * k, height: 31 * k, marginLeft: -50 * k, borderRadius: 16 * k, background: '#000'}} />
+    </div>
+  );
   return (
-    <div style={{position: 'absolute', left: cx - lidW / 2, top, width: lidW, height: lidH + baseH, opacity: o}}>
-      {/* shadow on the paper */}
-      <div style={{position: 'absolute', left: '-2%', right: '-2%', top: lidH + baseH * 0.5, height: baseH * 2.2, borderRadius: '50%', background: 'rgba(29,29,31,.35)', filter: `blur(${baseH * 1.2}px)`}} />
-      {/* lid: aluminium edge, black glass border, screen */}
-      <div style={{position: 'absolute', left: 0, top: 0, width: lidW, height: lidH, borderRadius: `${w * 0.026}px ${w * 0.026}px ${w * 0.008}px ${w * 0.008}px`, background: 'linear-gradient(180deg, #d9dadd, #b7b9bd)', boxShadow: '0 40px 90px -50px rgba(29,29,31,.45)'}}>
-        <div style={{position: 'absolute', inset: edge, borderRadius: `${w * 0.022}px ${w * 0.022}px ${w * 0.004}px ${w * 0.004}px`, background: '#060607'}}>
-          <div style={{position: 'absolute', left: bezel, top: bezel, width: w, height: sh, borderRadius: w * 0.008, overflow: 'hidden', background: '#fff'}}>
-            {/* menu bar */}
-            <div style={{position: 'absolute', left: 0, top: 0, width: w, height: menu, background: 'rgba(246,246,248,.96)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `0 ${w * 0.014}px`, fontFamily: EN, fontSize: menu * 0.55, color: '#1d1d1f'}}>
-              <span style={{fontWeight: 600}}>Safari</span>
-              <span>Fri 9:41</span>
-            </div>
-            {/* browser toolbar */}
-            <div style={{position: 'absolute', left: 0, top: menu, width: w, height: bar, background: '#f3f3f5', borderBottom: '1px solid rgba(0,0,0,.08)', display: 'flex', alignItems: 'center', padding: `0 ${w * 0.014}px`, gap: w * 0.006}}>
-              {['#ff5f57', '#febc2e', '#28c840'].map((c) => <div key={c} style={{width: bar * 0.24, height: bar * 0.24, borderRadius: '50%', background: c}} />)}
-              <div style={{flex: 1, display: 'flex', justifyContent: 'center'}}>
-                <div style={{width: '42%', height: bar * 0.56, borderRadius: bar * 0.16, background: '#e6e6ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: EN, fontSize: bar * 0.3, color: '#3c3c43'}}>neurouniverse.om</div>
-              </div>
-              <div style={{width: bar * 0.24 * 3 + w * 0.012}} />
-            </div>
-            <Img src={staticFile(`cap/${src}`)} style={{position: 'absolute', left: 0, top: menu + bar, width: w, height: (w / 1440) * 900, objectFit: 'cover', objectPosition: 'top'}} />
-            <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(115deg, rgba(255,255,255,.08), rgba(255,255,255,0) 40%)'}} />
-          </div>
-          {/* camera notch */}
-          <div style={{position: 'absolute', left: '50%', top: bezel - 1, width: w * 0.092, height: menu + 1, marginLeft: -w * 0.046, borderRadius: `0 0 ${menu * 0.45}px ${menu * 0.45}px`, background: '#060607'}}>
-            <div style={{position: 'absolute', left: '50%', top: menu * 0.28, width: menu * 0.32, height: menu * 0.32, marginLeft: -menu * 0.16, borderRadius: '50%', background: '#1a2133'}} />
-          </div>
+    <div style={{position: 'absolute', left: cx, top: cy, opacity: o, perspective: 2600 * k, transformStyle: 'preserve-3d'}}>
+      {/* soft shadow on the paper, growing as it opens */}
+      <div style={{position: 'absolute', left: -hw * (0.2 + open * 0.9) + shift, width: hw * (1.4 + open * 0.9), top: h / 2 + 20 * k, height: 40 * k, borderRadius: '50%', background: 'rgba(29,29,31,.28)', filter: `blur(${26 * k}px)`}} />
+      <div style={{transformStyle: 'preserve-3d', transform: `scale(${scale}) translateX(${shift}px) rotateX(${rx}deg) rotateY(${ry}deg)`}}>
+        {half(true, innerHalf(true), coverScreen)}
+        {half(false, innerHalf(false))}
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------- desktop browser window
+// A plain browser window with the desktop page (1440 x 900 CSS px captures); w = window width on the frame.
+export const Browser: React.FC<{src: string; w: number; cx: number; top: number; o?: number}> = ({src, w, cx, top, o = 1}) => {
+  const bar = w * 0.045, h = (w * 900) / 1440;
+  return (
+    <div style={{position: 'absolute', left: cx - w / 2, top, width: w, height: h + bar, borderRadius: w * 0.018, overflow: 'hidden', background: '#fff', opacity: o,
+      boxShadow: '0 60px 110px -50px rgba(29,29,31,.35), 0 0 0 1px rgba(29,29,31,.08)'}}>
+      <div style={{height: bar, background: '#f3f3f5', borderBottom: '1px solid rgba(0,0,0,.07)', display: 'flex', alignItems: 'center', padding: `0 ${w * 0.018}px`, gap: w * 0.008}}>
+        {[0, 1, 2].map((i) => <div key={i} style={{width: bar * 0.26, height: bar * 0.26, borderRadius: '50%', background: 'rgba(29,29,31,.16)'}} />)}
+        <div style={{flex: 1, display: 'flex', justifyContent: 'center'}}>
+          <div style={{width: '44%', height: bar * 0.58, borderRadius: bar * 0.18, background: '#e8e8ec', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: EN, fontSize: bar * 0.32, color: '#3c3c43'}}>neurouniverse.om</div>
         </div>
+        <div style={{width: bar * 0.26 * 3 + w * 0.016}} />
       </div>
-      {/* hinge and base, seen from the front */}
-      <div style={{position: 'absolute', left: (lidW - baseW) / 2, top: lidH - 1, width: baseW, height: baseH, borderRadius: `${baseH * 0.25}px ${baseH * 0.25}px ${baseH * 0.9}px ${baseH * 0.9}px / ${baseH * 0.25}px ${baseH * 0.25}px ${baseH}px ${baseH}px`,
-        background: 'linear-gradient(180deg, #f2f3f4 0%, #d5d7da 30%, #b9bbbf 75%, #8f9196 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.9)'}}>
-        <div style={{position: 'absolute', left: '50%', top: 0, width: baseW * 0.16, height: baseH * 0.42, marginLeft: -baseW * 0.08, borderRadius: `0 0 ${baseH * 0.5}px ${baseH * 0.5}px`, background: 'linear-gradient(180deg, #a7a9ad, #c9cbce)'}} />
-      </div>
-      <div style={{position: 'absolute', left: (lidW - lidW * 0.94) / 2, top: lidH - 2, width: lidW * 0.94, height: 3, background: 'rgba(0,0,0,.35)', filter: 'blur(1px)'}} />
+      <Img src={staticFile(`cap/${src}`)} style={{display: 'block', width: w, height: h}} />
     </div>
   );
 };
