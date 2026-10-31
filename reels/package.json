@@ -12,12 +12,16 @@
     "audio:studio": "python3 audio/studio_mix.py"
   },
   "dependencies": {
+    "@react-three/fiber": "^8.17.10",
     "@remotion/cli": "4.0.539",
     "@remotion/fonts": "4.0.539",
     "@remotion/paths": "4.0.539",
+    "@remotion/three": "^4.0.539",
+    "@types/three": "^0.170.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "remotion": "4.0.539"
+    "remotion": "4.0.539",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@types/react": "18.3.12",

@@ -2,3 +2,4 @@ node_modules
 out
 public/audio/eleven/candidates
 public/audio/studio/candidates
+public/rec/*/
