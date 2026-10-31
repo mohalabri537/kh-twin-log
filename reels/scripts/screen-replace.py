@@ -72,6 +72,19 @@ def corners(m):
     return np.array([cross(L[3], L[0]), cross(L[0], L[1]), cross(L[1], L[2]), cross(L[2], L[3])], np.float32)
 
 
+def despill(img, screen):
+    """Remove the green the screen threw onto the floor, the bezel and the air around it: wherever green rises above
+    red and blue outside the screen, pull it down to their level and tint that light lavender, like the backdrop."""
+    f = img.astype(np.float32)
+    B, G, R = f[..., 0], f[..., 1], f[..., 2]
+    excess = np.clip(G - (R + B) / 2 + 1, 0, None) * (1 - screen)  # green above the red-blue average: the backdrop never has that
+    excess = cv2.GaussianBlur(excess, (0, 0), 1.2)
+    f[..., 1] = G - excess
+    f[..., 2] = R + excess * 0.35  # a touch of pink-violet where the green was
+    f[..., 0] = B + excess * 0.55
+    return np.clip(f, 0, 255).astype(np.uint8)
+
+
 cap = cv2.VideoCapture(a.src)
 fps = cap.get(cv2.CAP_PROP_FPS) or 30
 frames = []
@@ -101,11 +114,13 @@ for i, (img, m, q) in enumerate(zip(frames, masks, Qs)):
     yy, xx = np.mgrid[0:img.shape[0], 0:img.shape[1]].astype(np.float32)
     span = max(1.0, q[1][0] - q[0][0])
     sheen = np.clip(1 - np.abs(((xx - q[0][0]) * 0.6 + (yy - q[0][1]) * 0.4) / span - 0.35 - 0.15 * i / len(frames)) * 2.2, 0, 1) * 14
-    alpha = cv2.GaussianBlur(cv2.erode(m, np.ones((3, 3), np.uint8)), (3, 3), 0).astype(np.float32)[..., None] / 255
+    cs, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    only = np.zeros_like(m)
+    if cs: cv2.drawContours(only, [max(cs, key=cv2.contourArea)], -1, 255, -1)
+    screen = cv2.bitwise_and(m, only)  # the screen's green, with the camera cutout still excluded
+    alpha = cv2.GaussianBlur(cv2.erode(screen, np.ones((3, 3), np.uint8)), (3, 3), 0).astype(np.float32)[..., None] / 255
     comp = np.clip(img.astype(np.float32) * (1 - alpha) + (warped + sheen[..., None]) * alpha, 0, 255).astype(np.uint8)
-    g = comp[:, :, 1].astype(int); rb = np.maximum(comp[:, :, 0], comp[:, :, 2]).astype(int)
-    spill = (g > rb + 18) & (alpha[..., 0] < 0.99)
-    comp[spill, 1] = rb[spill].astype(np.uint8)
+    comp = despill(comp, alpha[..., 0])
     cv2.imwrite(os.path.join(tmp, f'{i:04d}.png'), comp)
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-framerate', f'{fps}', '-i', os.path.join(tmp, '%04d.png'),
                 '-vf', 'scale=1080:1920:flags=lanczos' if a.crop9x16 is not None else 'null',
