@@ -79,11 +79,14 @@ const Camera: React.FC<{pos: [number, number, number]; look: [number, number, nu
 
 // a 3D view filling the frame, on a transparent canvas over the backdrop
 const Stage: React.FC<{children: React.ReactNode; pos?: [number, number, number]; look?: [number, number, number]; fov?: number}> = ({children, pos = [0, 0, 6], look = [0, 0, 0], fov = 26}) => (
-  <ThreeCanvas width={1080} height={1920} camera={{fov, position: pos}} gl={{antialias: true, alpha: true}}>
-    <Camera pos={pos} look={look} />
-    <Studio tone="light" exposure={1.0} />
-    {children}
-  </ThreeCanvas>
+  // drawn at twice the size and scaled down (supersampling: each pixel averages four), so edges come out smooth
+  <div style={{position: 'absolute', left: 0, top: 0, width: 2160, height: 3840, transform: 'scale(0.5)', transformOrigin: '0 0'}}>
+    <ThreeCanvas width={2160} height={3840} camera={{fov, position: pos}} gl={{antialias: true, alpha: true}}>
+      <Camera pos={pos} look={look} />
+      <Studio tone="light" exposure={1.0} />
+      {children}
+    </ThreeCanvas>
+  </div>
 );
 
 // ---------------------------------------------------------------- shots (f = the shot's own frame; 0 = its cut)

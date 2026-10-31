@@ -6,6 +6,6 @@ const [comp, out, ...frames] = process.argv.slice(2);
 const serveUrl = await bundle({entryPoint: path.resolve('src/index.ts')});
 const composition = await selectComposition({serveUrl, id: comp});
 for (const f of frames) {
-  await renderStill({serveUrl, composition, frame: Number(f), output: path.join(out, `${comp}-${f}.png`)});
+  await renderStill({serveUrl, composition, frame: Number(f), output: path.join(out, `${comp}-${f}.png`), onBrowserLog: (l) => { if (l.text.includes('DBG')) console.log(l.text); }});
   console.log('frame', f);
 }

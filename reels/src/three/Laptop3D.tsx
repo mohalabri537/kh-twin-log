@@ -98,7 +98,7 @@ export const Laptop3D: React.FC<{rec: string; frames: number; rate?: number; sta
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, BT + 0.0028, 0]}>
         <planeGeometry args={[BW - 0.03, BD - 0.03]} />
-        <meshPhysicalMaterial color="#0c0c0e" alphaMap={keys} transparent roughness={0.55} metalness={0} clearcoat={0.3} clearcoatRoughness={0.5} />
+        <meshPhysicalMaterial color="#060607" alphaMap={keys} transparent roughness={0.82} metalness={0} envMapIntensity={0.35} />
       </mesh>
       {/* hinge barrel */}
       <mesh position={[0, BT + 0.02, -BD / 2 + 0.05]} rotation={[0, 0, Math.PI / 2]}>
