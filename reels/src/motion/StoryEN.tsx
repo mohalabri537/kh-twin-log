@@ -2,7 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Img, interpolate, Sequence, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {Phone} from '../studio/devices';
 import {EN_THIN as EN} from '../theme';
-import {Chip, Form, clamp, GREY, Ico, INK, io, Mark, out, p, Page, RING, Row, Slam as SlamAR, spr, VIO} from './Story';
+import {Chip, Plan, clamp, GREY, Ico, INK, io, Mark, out, p, Page, RING, Row, Slam as SlamAR, spr, VIO} from './Story';
 
 // The longer English cut of the Story reel (38 s, 30 fps): the same look and score as the Arabic one, with a British
 // voice-over, the English site on the phones, two more stops (a condition page and the brain games) and word-by-word
@@ -344,27 +344,18 @@ const SFX: [number, string, number][] = [
   [734, 'blip', 0.18], [759, 'blip', 0.18], [783, 'blip', 0.18], [799, 'whip', 0.22], [902, 'ding', 0.25], [912, 'star', 0.2], [920, 'whoosh', 0.18], [1050, 'bloom', 0.3],
 ];
 
-// the grainy forms behind each scene (see Page in Story.tsx)
-const FORMS: Form[] = [
-  {kind: 'sunrise', from: 0, to: 82},
-  {kind: 'orbs', from: 78, to: 174, at: [81, 107, 135]},
-  {kind: 'halo', from: 166, to: 232},
-  {kind: 'sunrise', from: 268, to: 376},
-  {kind: 'ribbon', from: 368, to: 502},
-  {kind: 'ribbon', from: 494, to: 600, flip: true},
-  {kind: 'orbs', from: 592, to: 696, at: [600, 646, 656, 665]},
-  {kind: 'blooms', from: 688, to: 810, at: [734, 759, 783]},
-  {kind: 'mint', from: 801, to: 930},
-  {kind: 'brain', from: 922, to: 1020},
-  {kind: 'crown', from: 1012, to: 1200, at: [1050]},
-];
+// the blob ensemble: a formation per scene, and the spoken beats that swell a blob (see Page in Story.tsx)
+const PLAN: Plan = {
+  at: [[0, 'corners'], [168, 'orbit'], [264, 'dawn'], [368, 'stage'], [922, 'hemispheres'], [1012, 'dawn']],
+  beats: [6, 81, 107, 135, 247, 281, 461, 469, 476, 484, 503, 600, 646, 656, 665, 734, 759, 783, 902, 945, 990, 1050],
+};
 
 export const StoryEN: React.FC = () => {
   const f = useCurrentFrame();
   const [sx, sy] = shake(f);
   return (
     <AbsoluteFill>
-      <Page forms={FORMS} />
+      <Page plan={PLAN} />
       <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${1 + kick(f)})`}}>
         <Hook f={f} />
         <Symptoms f={f} />
