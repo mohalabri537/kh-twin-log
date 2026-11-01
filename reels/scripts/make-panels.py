@@ -25,7 +25,10 @@ PANELS = {
 }
 for name, (src, top, bottom) in PANELS.items():
     im = Image.open(os.path.join(CAP, src)).convert('RGB')
-    im.crop((0, top * 3, im.width, bottom * 3)).resize((780, int((bottom - top) * 2))).save(os.path.join(OUT, f'{name}.jpg'), quality=88)
+    crop = im.crop((0, top * 3, im.width, bottom * 3))
+    crop.resize((780, int((bottom - top) * 2))).save(os.path.join(OUT, f'{name}.jpg'), quality=88)
+    os.makedirs(OUT + '-hd', exist_ok=True)  # full 3x resolution, for cards shown large (the motion reel)
+    crop.save(os.path.join(OUT + '-hd', f'{name}.jpg'), quality=92)
 # the desktop articles page, as a landscape panel
 im = Image.open(os.path.join(CAP, 'desk-articles.jpg')).convert('RGB')
 im.resize((1440, 900)).save(os.path.join(OUT, 'articles.jpg'), quality=88)
