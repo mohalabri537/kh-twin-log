@@ -32,6 +32,7 @@ const ARCS = [
   {r: 690, w: 58, sweep: 0.4, speed: -0.16, c1: '#F4B4DE', c2: '#CDB0F8', o: 0.85},
   {r: 850, w: 42, sweep: 0.32, speed: 0.11, c1: '#B4C6FF', c2: '#9A80F4', o: 0.75},
 ];
+const TAPER: [number, number][] = [[1, 0.35], [0.72, 0.5], [0.45, 0.8]]; // [share of the arc's length, opacity]
 const easeIO = (x: number) => { const t = clamp(x); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
 const poseAt = (plan: Plan, f: number): Pose => {
   const at = plan.at;
@@ -59,10 +60,10 @@ export const Page: React.FC<{plan: Plan}> = ({plan}) => {
       <svg width="1080" height="1920" style={{position: 'absolute', inset: 0}}>
         <defs>
           <filter id={id} filterUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920" colorInterpolationFilters="sRGB">
-            {/* the core: clean edge, fine grain inside */}
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="soft" />
+            {/* the core: its sides dissolve outwards into grain */}
+            <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="soft" />
             <feImage href={noise} x="0" y="0" width="1080" height="1920" preserveAspectRatio="none" result="n" />
-            <feDisplacementMap in="soft" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G" result="grainy" />
+            <feDisplacementMap in="soft" in2="n" scale="30" xChannelSelector="R" yChannelSelector="G" result="grainy" />
             <feColorMatrix in="n" type="saturate" values="0" result="ng" />
             <feComposite in="ng" in2="grainy" operator="in" result="ngi" />
             <feBlend in="ngi" in2="grainy" mode="overlay" result="speck" />
@@ -70,9 +71,9 @@ export const Page: React.FC<{plan: Plan}> = ({plan}) => {
           </filter>
           <filter id={`halo${seed}`} filterUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920" colorInterpolationFilters="sRGB">
             {/* the halo: a wide soft falloff, scattered into grain like a risograph */}
-            <feGaussianBlur in="SourceGraphic" stdDeviation="34" result="soft" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="55" result="soft" />
             <feImage href={noise} x="0" y="0" width="1080" height="1920" preserveAspectRatio="none" result="n" />
-            <feDisplacementMap in="soft" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G" />
+            <feDisplacementMap in="soft" in2="n" scale="56" xChannelSelector="R" yChannelSelector="G" />
           </filter>
           <filter id="glowBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="90" /></filter>
           {ARCS.map((a, i) => (
@@ -89,20 +90,31 @@ export const Page: React.FC<{plan: Plan}> = ({plan}) => {
             {ARCS.map((a, i) => {
               const C = 2 * Math.PI * a.r;
               const sweep = a.sweep * intro * (1 + Math.sin(f / (40 + i * 9)) * 0.08);
-              const width = a.w * (1 + pulse * (0.35 - i * 0.08)) * (layer === 'halo' ? 2.6 : 1);
+              const width = a.w * 1.35 * (1 + pulse * (0.35 - i * 0.08)) * (layer === 'halo' ? 2.4 : 1);
+              // three lengths centred on the same point: strongest in the middle, fading out towards both ends
               return (
-                <circle key={i} r={a.r} fill="none" stroke={`url(#arcg${i})`} strokeWidth={width} strokeLinecap="round" opacity={a.o}
-                  strokeDasharray={`${sweep * C} ${C}`} transform={`rotate(${f * a.speed + i * 120})`} />
+                <g key={i} transform={`rotate(${f * a.speed + i * 120})`} opacity={a.o}>
+                  {TAPER.map(([len, o], j) => (
+                    <circle key={j} r={a.r} fill="none" stroke={`url(#arcg${i})`} strokeWidth={width * (0.75 + 0.25 * len)} strokeLinecap="round" opacity={o}
+                      strokeDasharray={`${sweep * len * C} ${C}`} strokeDashoffset={-(sweep * C * (1 - len)) / 2} />
+                  ))}
+                </g>
               );
             })}
           </g>
         </g>
         ))}
         {/* the hairline ring with fine ticks, crisp */}
-        <g transform={`translate(${cx} ${cy}) scale(${sc}) rotate(${rot - f * 0.08})`} opacity={0.55 * intro}>
-          <circle r={600} fill="none" stroke="#7B5CF0" strokeWidth={2.2} strokeDasharray={`${0.62 * 2 * Math.PI * 600} ${2 * Math.PI * 600}`} strokeLinecap="round" />
-          <circle r={624} fill="none" stroke="#7B5CF0" strokeWidth={10} strokeDasharray={`1.6 ${(2 * Math.PI * 624) / 120 - 1.6}`} opacity={0.6} />
-          <circle r={770} fill="none" stroke="#C9A8F7" strokeWidth={1.6} strokeDasharray={`${0.3 * 2 * Math.PI * 770} ${2 * Math.PI * 770}`} transform="rotate(200)" />
+        <g transform={`translate(${cx} ${cy}) scale(${sc}) rotate(${rot - f * 0.08})`} opacity={0.32 * intro}>
+          {TAPER.map(([len, o], j) => {
+            const C6 = 2 * Math.PI * 600, C7 = 2 * Math.PI * 770;
+            return (
+              <g key={j} opacity={o}>
+                <circle r={600} fill="none" stroke="#7B5CF0" strokeWidth={2} strokeDasharray={`${0.6 * len * C6} ${C6}`} strokeDashoffset={-(0.6 * C6 * (1 - len)) / 2} />
+                <circle r={770} fill="none" stroke="#C9A8F7" strokeWidth={1.6} strokeDasharray={`${0.3 * len * C7} ${C7}`} strokeDashoffset={-(0.3 * C7 * (1 - len)) / 2} transform="rotate(200)" />
+              </g>
+            );
+          })}
         </g>
       </svg>
     </AbsoluteFill>
