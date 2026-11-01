@@ -4,11 +4,11 @@ import {LOGO_D, LOGO_VB} from '../logoPath';
 import {Phone} from '../studio/devices';
 import {AR, EN} from '../theme';
 
-// A product-explainer reel (31 s, 30 fps) in the manner of a bright motion-design story: white pages with a soft violet
-// glow rising from the bottom, kinetic Arabic type, little icons popping between words, a ring of the site's screens and
-// the doctors, a word set with design guide lines, the mark growing from a dot, flat phones playing the real site with
-// stickers floating round them, and a typed call to action.
-export const STORY_FRAMES = 930;
+// A voiced product-explainer reel (28 s, 30 fps): white pages with a soft violet glow rising from the bottom, kinetic
+// Arabic type cut to a Saudi voice-over, a score that lifts as the mark lands and hits as it returns, and the real site
+// playing on flat phones. Every cue below is a frame where a word is spoken (voice take B: video frame = 30 t - 17).
+// Audio: public/audio/story/mix.mp3, built by audio/story_mix.sh.
+export const STORY_FRAMES = 840;
 const INK = '#1D1D1F', VIO = '#7431F4', GREY = '#6E6E73';
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -79,176 +79,308 @@ const Row: React.FC<{y: number; children: React.ReactNode}> = ({y, children}) =>
   <div dir="rtl" style={{position: 'absolute', top: y, left: 60, right: 60, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center'}}>{children}</div>
 );
 
-// ---------------------------------------------------------------- A (0–4 s): the questions
+// a word that lands hard: drops in large and snaps to size on a stiff spring (for the spoken key words)
+const Slam: React.FC<{f: number; at: number; leave?: number; children: React.ReactNode; color?: string; size?: number; weight?: number}> = ({f, at, leave = 1e9, children, color = INK, size = 96, weight = 600}) => {
+  const {fps} = useVideoConfig();
+  if (f < at) return <span style={{display: 'inline-block', fontFamily: AR, fontWeight: weight, fontSize: size, lineHeight: 1.3, padding: '0 .14em', opacity: 0}}>{children}</span>;
+  const k = spring({frame: f - at, fps, config: {damping: 14, stiffness: 260, mass: 0.6}});
+  const l = io(p(f, leave, 7));
+  return <span style={{display: 'inline-block', fontFamily: AR, fontWeight: weight, fontSize: size, color, lineHeight: 1.3, padding: '0 .14em', opacity: clamp(k * 3) * (1 - l), transform: `translateY(${-l * 60}px) scale(${1.35 - 0.35 * k})`, filter: `blur(${l * 10}px)`}}>{children}</span>;
+};
+
+// the whole frame kicks a little on every cut (a quick zoom that settles), and shakes on the counter's stamps
+const CUTS = [9, 47, 72, 95, 120, 168, 198, 245, 290, 344, 387, 399, 413, 425, 443, 471, 538, 606, 639, 683, 738, 794];
+const SHAKES = [387, 399, 413, 425];
+const kick = (f: number) => {
+  const c = CUTS.filter((x) => x <= f).pop();
+  return c === undefined ? 0 : Math.exp(-(f - c) / 4) * 0.045;
+};
+const shake = (f: number) => {
+  const c = SHAKES.filter((x) => x <= f).pop();
+  if (c === undefined || f - c > 8) return [0, 0];
+  const a = Math.exp(-(f - c) / 2.5) * 14;
+  return [Math.sin((f - c) * 2.7) * a, Math.cos((f - c) * 3.1) * a];
+};
+
+// ---------------------------------------------------------------- 0–1.5 s «كل يوم، سؤال جديد»
 const Hook: React.FC<{f: number}> = ({f}) => (
-  <>
-    <Row y={820}>
-      <Word f={f} at={6} leave={52}>كل</Word><Word f={f} at={12} leave={52}>يوم،</Word><Word f={f} at={20} leave={52}>سؤال</Word><Word f={f} at={28} leave={52} color={VIO}>جديد</Word>
-    </Row>
-    <Chip f={f} at={24} n="cloud" x={250} y={700} rot={-12} leave={52} />
-    <Chip f={f} at={32} n="bolt" x={840} y={1080} size={84} rot={10} leave={52} />
-    {/* the questions, one per beat */}
-    <Row y={760}><Word f={f} at={60} leave={108} size={120} weight={600}>صداع؟</Word></Row>
-    <Row y={900}><Word f={f} at={75} leave={108} size={120} weight={600} color={VIO}>تنميل؟</Word></Row>
-    <Row y={1040}><Word f={f} at={90} leave={108} size={120} weight={600}>نسيان؟</Word></Row>
-    <Chip f={f} at={62} n="head" x={210} y={820} rot={-10} leave={108} />
-    <Chip f={f} at={77} n="hand" x={870} y={960} rot={8} leave={108} />
-    <Chip f={f} at={92} n="cloud" x={230} y={1110} size={88} rot={-6} leave={108} />
-  </>
+  f > 50 ? null : (
+    <>
+      <Row y={780}><Slam f={f} at={9} leave={42} size={120}>كل</Slam><Slam f={f} at={13} leave={42} size={120}>يوم،</Slam></Row>
+      <Row y={940}><Slam f={f} at={19} leave={42} size={120}>سؤال</Slam><Slam f={f} at={27} leave={42} size={120} color={VIO}>جديد</Slam></Row>
+      <Chip f={f} at={20} n="cloud" x={220} y={690} rot={-12} leave={42} />
+      <Chip f={f} at={28} n="bolt" x={860} y={1170} size={84} rot={10} leave={42} />
+    </>
+  )
 );
 
-// ---------------------------------------------------------------- B (4–7 s): a ring of the site and the doctors, «إليك الحل»
+// ---------------------------------------------------------------- 1.5–4 s the three symptoms, each one full-frame on its word
+const SYMPTOMS: [number, number, string, string][] = [[47, 72, 'صداع؟', 'head'], [72, 95, 'تنميل؟', 'hand'], [95, 118, 'نسيان؟', 'cloud']];
+const Symptoms: React.FC<{f: number}> = ({f}) => {
+  const {fps} = useVideoConfig();
+  return (
+    <>
+      {SYMPTOMS.map(([at, end, word, icon], i) => {
+        if (f < at || f > end + 6) return null;
+        const k = spring({frame: f - at, fps, config: {damping: 13, stiffness: 240, mass: 0.6}});
+        const l = io(p(f, end - 2, 7));
+        const dir = i % 2 ? 1 : -1;
+        return (
+          <AbsoluteFill key={i} style={{transform: `translateX(${l * dir * -900}px)`, opacity: 1 - l * 0.6}}>
+            {/* a soft violet disc behind, and the icon riding on it */}
+            <div style={{position: 'absolute', left: 540 - 300, top: 900 - 300, width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,80,255,.22), rgba(124,80,255,0) 68%)', transform: `scale(${0.4 + 0.6 * k})`}} />
+            <div style={{position: 'absolute', left: 540 - 85, top: 640, width: 170, height: 170, borderRadius: 52, background: 'rgba(255,255,255,.9)', boxShadow: '0 24px 44px -18px rgba(90,40,200,.45), inset 0 0 0 1.5px rgba(124,80,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `scale(${k}) rotate(${(1 - k) * dir * 30}deg)`}}>
+              <Ico n={icon} size={100} />
+            </div>
+            <div dir="rtl" style={{position: 'absolute', top: 860, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 700, fontSize: 220, color: i === 1 ? VIO : INK, lineHeight: 1.3, transform: `scale(${1.5 - 0.5 * k})`, opacity: clamp(k * 3)}}>{word}</div>
+            <div style={{position: 'absolute', top: 1240, width: '100%', display: 'flex', justifyContent: 'center', gap: 18}}>
+              {[0, 1, 2].map((j) => <div key={j} style={{width: 18, height: 18, borderRadius: 9, background: j === i ? VIO : 'rgba(124,80,255,.22)'}} />)}
+            </div>
+          </AbsoluteFill>
+        );
+      })}
+    </>
+  );
+};
+
+// ---------------------------------------------------------------- 4–6.4 s a ring of the site and the doctors, «تبحث عن إجابة واضحة؟»
 const RING = ['cap/panels-hd/hero.jpg', 'img/haifa-cut.webp', 'cap/panels-hd/conditions.jpg', 'img/said-cut.webp', 'cap/panels-hd/games.jpg', 'img/wafaa-cut.webp', 'cap/panels-hd/booking.jpg', 'cap/panels-hd/doctors.jpg'];
 const Ring: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
-  if (f < 116 || f > 214) return null;
-  const leave = io(p(f, 200, 12));
+  if (f < 114 || f > 186) return null;
+  const burst = out(p(f, 164, 14)); // flung outwards as the violet floods in
   return (
     <>
       {RING.map((src, i) => {
-        const k = spr(f, 120 + i * 3, fps, {damping: 14, stiffness: 110, mass: 0.8});
-        const a = (i / RING.length) * Math.PI * 2 + (f - 120) / 90 - Math.PI / 2;
-        const r = 330 * k * (1 + leave * 1.4);
-        const x = 540 + Math.cos(a) * r * 1.05, y = 960 + Math.sin(a) * r * 1.35;
+        const k = spr(f, 116 + i * 2, fps, {damping: 14, stiffness: 140, mass: 0.7});
+        const a = (i / RING.length) * Math.PI * 2 + (f - 116) / 40 - Math.PI / 2;
+        const r = 340 * k * (1 + burst * 1.6);
+        const x = 540 + Math.cos(a) * r * 1.05, y = 900 + Math.sin(a) * r * 1.4;
         const doc = src.startsWith('img/');
         const w = doc ? 190 : 210, h = doc ? 190 : 250;
         return (
-          <div key={i} style={{position: 'absolute', left: x - w / 2, top: y - h / 2, width: w, height: h, borderRadius: 28, overflow: 'hidden', opacity: clamp(k * 2) * (1 - leave), transform: `scale(${k}) rotate(${Math.sin(a) * 8}deg)`,
+          <div key={i} style={{position: 'absolute', left: x - w / 2, top: y - h / 2, width: w, height: h, borderRadius: 28, overflow: 'hidden', opacity: clamp(k * 2) * (1 - burst), transform: `scale(${k * (1 + burst * 0.4)}) rotate(${Math.sin(a) * 8 + burst * 30}deg)`,
             background: doc ? 'radial-gradient(circle at 50% 40%, #EADFFF, #C7B2FF)' : '#fff', boxShadow: '0 20px 40px -18px rgba(90,40,200,.4), inset 0 0 0 1.5px rgba(124,80,255,.12)'}}>
             <Img src={staticFile(src)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: doc ? '50% 15%' : 'top'}} />
           </div>
         );
       })}
-      <Row y={900}><Word f={f} at={124} leave={160} size={60}>تبحث عن إجابة واضحة؟</Word></Row>
-      <Row y={900}><Word f={f} at={166} leave={200} size={68} weight={600} color={VIO}>إليك الحل</Word></Row>
+      <Row y={830}><Slam f={f} at={120} leave={162} size={76}>تبحث</Slam><Slam f={f} at={132} leave={162} size={76}>عن</Slam></Row>
+      <Row y={930}><Slam f={f} at={137} leave={162} size={76}>إجابة</Slam><Slam f={f} at={149} leave={162} size={76} color={VIO}>واضحة؟</Slam></Row>
     </>
   );
 };
 
-// ---------------------------------------------------------------- C (7–9 s): «واضح.» set with design guide lines, tightening
-const Clear: React.FC<{f: number}> = ({f}) => {
-  if (f < 212 || f > 282) return null;
-  const draw = out(p(f, 214, 18));
-  const tight = io(p(f, 232, 26));
-  const leave = io(p(f, 268, 12));
-  const letters = ['و', 'ا', 'ض', 'ح', '.'];
-  const line = (style: React.CSSProperties) => <div style={{position: 'absolute', background: 'rgba(124,80,255,.45)', ...style}} />;
+// ---------------------------------------------------------------- 5.5–8 s violet floods the frame: «إليك الحل», then drains into a ring
+const Flood: React.FC<{f: number}> = ({f}) => {
+  if (f < 162 || f > 250) return null;
+  const grow = io(p(f, 162, 12));
+  const drain = io(p(f, 194, 16));
+  const r = 40 + grow * 1300 - drain * 1300;
+  const ring = f >= 210; // once drained, the disc becomes a ring waiting for the mark
+  const pulse = 1 + Math.sin((f - 210) / 3) * 0.04;
+  const away = out(p(f, 243, 8));
   return (
-    <AbsoluteFill style={{opacity: 1 - leave}}>
-      {line({left: 60, right: 60, top: 1010, height: 2, transform: `scaleX(${draw})`})}
-      {line({left: 60, right: 60, top: 880, height: 1.5, transform: `scaleX(${draw})`, opacity: 0.6})}
-      {line({left: 60, right: 60, top: 1110, height: 1.5, transform: `scaleX(${draw})`, opacity: 0.6})}
-      {[300, 420, 540, 660, 780].map((x, i) => line({left: x + (540 - x) * tight * 0.45, top: 760, width: 1.5, height: 460 * draw, opacity: 0.5 * (1 - tight)}))}
-      <div dir="rtl" style={{position: 'absolute', top: 820, width: '100%', display: 'flex', justifyContent: 'center', gap: `${(1 - tight) * 90}px`}}>
-        {letters.map((l, i) => (
-          <span key={i} style={{fontFamily: AR, fontWeight: 600, fontSize: 230, color: i === 4 ? VIO : INK, opacity: out(p(f, 216 + i * 3, 10)), lineHeight: 1.1}}>{l === '.' ? '.' : l}</span>
-        ))}
-      </div>
-      <div dir="rtl" style={{position: 'absolute', top: 1170, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 400, fontSize: 46, color: GREY, opacity: out(p(f, 246, 14))}}>إجابات عن صحة الدماغ والأعصاب</div>
-    </AbsoluteFill>
+    <>
+      {!ring ? (
+        <div style={{position: 'absolute', left: 540 - r, top: 860 - r, width: r * 2, height: r * 2, borderRadius: '50%', background: `radial-gradient(circle at 50% 40%, #8A55FF, ${VIO} 55%, #5A21D9)`}} />
+      ) : (
+        <div style={{position: 'absolute', left: 500, top: 820, width: 80, height: 80, borderRadius: 40, border: `14px solid ${VIO}`, transform: `scale(${pulse * (1 + away * 3)})`, opacity: 1 - away}} />
+      )}
+      {f < 200 && (
+        <div dir="rtl" style={{position: 'absolute', top: 780, width: '100%', display: 'flex', justifyContent: 'center', opacity: 1 - io(p(f, 192, 6))}}>
+          <Slam f={f} at={168} size={150} weight={700} color="#fff">إليك</Slam><Slam f={f} at={180} size={150} weight={700} color="#fff">الحل</Slam>
+        </div>
+      )}
+    </>
   );
 };
 
-// ---------------------------------------------------------------- D (9–11 s): the mark grows from a dot
+// ---------------------------------------------------------------- 6.6–9.6 s «عيادة طبّ وعلوم الأعصاب… بموقعها الجديد»: the mark lands on the lift
 const Brand: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
-  if (f < 278 || f > 346) return null;
-  const dot = spr(f, 280, fps, {damping: 10, stiffness: 200, mass: 0.6});
-  const grow = spring({frame: f - 292, fps, config: {damping: 13, stiffness: 120, mass: 0.9}});
-  const leave = io(p(f, 334, 12));
+  if (f < 196 || f > 292) return null;
+  const grow = spring({frame: f - 245, fps, config: {damping: 11, stiffness: 170, mass: 0.7}});
+  const up = io(p(f, 252, 14)); // the mark and name move up to make room for the address
+  const leave = io(p(f, 282, 10));
+  const url = 'neurouniverse.om';
+  const typed = Math.min(url.length, Math.max(0, Math.floor((f - 258) / 1.2)));
   return (
-    <AbsoluteFill style={{opacity: 1 - leave, transform: `scale(${1 + leave * 0.2})`}}>
-      <div style={{position: 'absolute', left: 540 - 40, top: 860 - 40, width: 80, height: 80, borderRadius: 40, border: `14px solid ${VIO}`, transform: `scale(${dot * (1 - grow)})`}} />
-      <div style={{position: 'absolute', left: 540, top: 880, transform: `translate(-50%,-50%) scale(${grow})`}}><Mark size={340} /></div>
-      <div dir="rtl" style={{position: 'absolute', top: 1060, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 600, fontSize: 80, color: INK, opacity: out(p(f, 304, 12)), transform: `translateY(${(1 - out(p(f, 304, 12))) * 30}px)`}}>طبّ وعلوم الأعصاب</div>
-      <div style={{position: 'absolute', top: 1170, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 500, fontSize: 40, color: VIO, opacity: out(p(f, 312, 12))}}>neurouniverse.om</div>
-    </AbsoluteFill>
-  );
-};
-
-// ---------------------------------------------------------------- E (11–23 s): three uses, each on a flat phone with stickers
-type Use = {at: number; rec: string; rate: number; title: string; sub: string; chips: [string, number, number][]; tag?: [string, number, number]};
-const USES: Use[] = [
-  {at: 340, rec: 'phone-guide.mp4', rate: 1, title: 'دليل الأعراض', sub: 'ومتى تتصل بالرقم 9999', chips: [['heart', 180, 980], ['wave', 900, 1180], ['head', 170, 1420]], tag: ['9999', 880, 820]},
-  {at: 460, rec: 'phone-doctors.mp4', rate: 1, title: 'أطباؤنا', sub: 'للكبار والأطفال', chips: [['star', 190, 900], ['check', 900, 1060], ['heart', 880, 1500]]},
-  {at: 580, rec: 'phone-book.mp4', rate: 1, title: 'احجز موعدك', sub: 'بخطوات بسيطة، عبر واتساب', chips: [['cal', 180, 980], ['phone', 900, 1300], ['check', 190, 1500]], tag: ['تم ✓', 880, 860]},
-];
-const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
-  const {fps} = useVideoConfig();
-  const g = f - u.at;
-  if (g < -10 || g > 128) return null;
-  const rise = spring({frame: g, fps, config: {damping: 15, stiffness: 100, mass: 0.9}});
-  const leave = io(p(g, 112, 14));
-  return (
-    <AbsoluteFill style={{opacity: 1 - leave, transform: `translateY(${-leave * 120}px)`}}>
-      <Row y={200}><Word f={f} at={u.at + 4} size={104} weight={600}>{u.title}</Word></Row>
-      <Row y={360}><Word f={f} at={u.at + 12} size={46} color={GREY}>{u.sub}</Word></Row>
-      <Sequence from={u.at} durationInFrames={140}>
-        <AbsoluteFill style={{transform: `translateY(${(1 - rise) * 900}px) rotate(${(1 - rise) * 6}deg)`}}>
-          <Phone src={u.rec} k={1.08} cx={540} top={560} lift={10} />
-        </AbsoluteFill>
-      </Sequence>
-      {u.chips.map(([n, x, y], i) => <Chip key={i} f={f} at={u.at + 20 + i * 6} n={n} x={x} y={y} rot={i % 2 ? 10 : -10} />)}
-      {u.tag && (() => {
-        const k = spr(f, u.at + 36, fps);
-        return f >= u.at + 36 ? (
-          <div dir="rtl" style={{position: 'absolute', left: u.tag[1] - 110, top: u.tag[2], padding: '16px 30px', borderRadius: 999, background: u.tag[0] === '9999' ? '#D70015' : '#25D366', color: '#fff', fontFamily: u.tag[0] === '9999' ? EN : AR, fontWeight: 700, fontSize: 44, transform: `scale(${k}) rotate(${(1 - k) * 12 + 6}deg)`, boxShadow: '0 14px 30px -10px rgba(0,0,0,.35)'}}>{u.tag[0]}</div>
-        ) : null;
-      })()}
-    </AbsoluteFill>
-  );
-};
-
-// ---------------------------------------------------------------- F (23–26 s): «مهما كان سؤالك / نحن هنا لنرشدك»
-const Guide: React.FC<{f: number}> = ({f}) => (
-  <>
-    <Row y={820}><Word f={f} at={702} leave={770}>مهما</Word><Word f={f} at={710} leave={770}>كان</Word><Word f={f} at={718} leave={770} color={VIO}>سؤالك</Word></Row>
-    <Row y={960}><Word f={f} at={732} leave={770}>نحن</Word><Word f={f} at={740} leave={770}>هنا</Word><Word f={f} at={748} leave={770} color={VIO}>لنرشدك</Word></Row>
-    <Chip f={f} at={722} n="heart" x={200} y={720} rot={-10} leave={770} />
-    <Chip f={f} at={752} n="check" x={880} y={1150} rot={10} leave={770} />
-  </>
-);
-
-// ---------------------------------------------------------------- G (26–31 s): typed call to action, then the mark
-const Cta: React.FC<{f: number}> = ({f}) => {
-  const {fps} = useVideoConfig();
-  if (f < 776) return null;
-  const text = 'احجز موعدك الآن';
-  const n = Math.min(text.length, Math.max(0, Math.floor((f - 782) / 2.2)));
-  const caret = Math.floor(f / 9) % 2 === 0;
-  const lift = io(p(f, 836, 18));
-  const mark = spr(f, 846, fps, {damping: 13, stiffness: 140, mass: 0.8});
-  return (
-    <AbsoluteFill>
-      <div dir="rtl" style={{position: 'absolute', top: 880 - lift * 240, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 600, fontSize: 108, color: VIO}}>
-        {text.slice(0, n)}<span style={{display: 'inline-block', width: 7, height: 110, marginRight: 8, background: VIO, verticalAlign: 'middle', opacity: caret && lift < 1 ? 1 : 0}} />
+    <AbsoluteFill style={{opacity: 1 - leave, transform: `translateY(${-leave * 140}px)`}}>
+      {f >= 245 && <div style={{position: 'absolute', left: 540, top: 860 - up * 120, transform: `translate(-50%,-50%) scale(${grow * (1 - up * 0.3)})`}}><Mark size={360} /></div>}
+      <div style={{position: 'absolute', top: 1040 - up * 190, width: '100%'}}>
+        <Row y={0}>
+          <Slam f={f} at={198} size={84}>عيادة</Slam><Slam f={f} at={213} size={84}>طبّ</Slam><Slam f={f} at={222} size={84}>وعلوم</Slam><Slam f={f} at={235} size={84} color={VIO}>الأعصاب</Slam>
+        </Row>
       </div>
-      {f >= 846 && (
+      {f >= 255 && (
         <>
-          <div style={{position: 'absolute', left: 540, top: 1000, transform: `translate(-50%,-50%) scale(${mark})`}}><Mark size={230} /></div>
-          <div style={{position: 'absolute', top: 1130, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 500, fontSize: 48, color: INK, opacity: out(p(f, 860, 12))}}>neurouniverse.om</div>
-          <div dir="rtl" style={{position: 'absolute', top: 1210, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 400, fontSize: 38, color: GREY, opacity: out(p(f, 868, 12))}}>الرابط في البايو</div>
+          <Row y={1000}><Slam f={f} at={255} size={64} color={GREY} weight={500}>بموقعها</Slam><Slam f={f} at={268} size={64} color={VIO}>الجديد</Slam></Row>
+          {/* an address bar typing the site */}
+          <div style={{position: 'absolute', left: 540 - 330, top: 1130, width: 660, height: 104, borderRadius: 52, background: 'rgba(255,255,255,.92)', boxShadow: '0 20px 40px -18px rgba(90,40,200,.45), inset 0 0 0 1.5px rgba(124,80,255,.18)', display: 'flex', alignItems: 'center', gap: 20, padding: '0 36px', transform: `scale(${spr(f, 256, fps)})`}}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={VIO} strokeWidth="2.2" strokeLinecap="round"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+            <span style={{fontFamily: EN, fontWeight: 500, fontSize: 46, color: INK}}>{url.slice(0, typed)}<span style={{display: 'inline-block', width: 4, height: 46, marginLeft: 4, background: VIO, verticalAlign: 'middle', opacity: Math.floor(f / 8) % 2 ? 1 : 0}} /></span>
+          </div>
         </>
       )}
     </AbsoluteFill>
   );
 };
 
+// ---------------------------------------------------------------- 9.7–21 s three uses on a flat phone, each one cut in on its spoken title
+type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]};
+const USES: Use[] = [
+  {from: 290, to: 440, rec: 'phone-guide.mp4', head: [['دليل', 295], ['واضح', 304], ['للأعراض', 312, VIO]], sub: [['ومتى', 344], ['تتصل', 357], ['بالرقم', 370]], chips: [['heart', 180, 1000, 300], ['wave', 900, 1250, 318], ['head', 170, 1440, 330]]},
+  {from: 438, to: 536, rec: 'phone-doctors.mp4', head: [['أطباؤنا', 443, VIO]], sub: [['استشاريون', 471], ['للكبار', 493], ['والأطفال', 511, VIO]], chips: [['star', 900, 980, 452]]},
+  {from: 533, to: 640, rec: 'phone-book.mp4', head: [['واحجز', 538], ['موعدك', 556, VIO]], sub: [['بخطوات', 571], ['بسيطة', 586]], chips: [['cal', 180, 1000, 548], ['check', 190, 1480, 590]]},
+];
+const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
+  const {fps} = useVideoConfig();
+  if (f < u.from || f > u.to + 2) return null;
+  const g = f - u.from;
+  const rise = spring({frame: g, fps, config: {damping: 16, stiffness: 150, mass: 0.8}});
+  const leave = io(p(f, u.to - 8, 9)); // whips up and out as the next scene comes up underneath
+  return (
+    <AbsoluteFill style={{transform: `translateY(${-leave * 1500}px)`, filter: leave > 0.02 ? `blur(${leave * 14}px)` : undefined}}>
+      <Row y={190}>{u.head.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={104} color={c ?? INK}>{w}</Slam>)}</Row>
+      <Row y={350}>{u.sub.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={52} weight={500} color={c ?? GREY}>{w}</Slam>)}</Row>
+      <Sequence from={u.from} durationInFrames={u.to - u.from + 4} layout="none">
+        <AbsoluteFill style={{transform: `translateY(${(1 - rise) * 1300}px) rotate(${(1 - rise) * 5}deg)`}}>
+          <Phone src={u.rec} k={1.08} cx={540} top={540} lift={10} />
+        </AbsoluteFill>
+      </Sequence>
+      {u.chips.map(([n, x, y, at], i) => <Chip key={i} f={f} at={at} n={n} x={x} y={y} rot={i % 2 ? 10 : -10} />)}
+    </AbsoluteFill>
+  );
+};
+
+// the emergency number stamps up one nine per spoken «تسعة»
+const NINES = [387, 399, 413, 425];
+const Counter: React.FC<{f: number}> = ({f}) => {
+  const {fps} = useVideoConfig();
+  if (f < 387 || f > 442) return null;
+  const n = NINES.filter((x) => x <= f).length;
+  const last = NINES[n - 1];
+  const k = spring({frame: f - last, fps, config: {damping: 10, stiffness: 300, mass: 0.5}});
+  const first = spring({frame: f - 387, fps, config: {damping: 12, stiffness: 220, mass: 0.6}});
+  const leave = io(p(f, 432, 9));
+  return (
+    <div style={{position: 'absolute', right: 70, top: 760 - leave * 1500, transform: `rotate(${6 - first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '100% 50%'}}>
+      <div style={{padding: '22px 40px', borderRadius: 999, background: '#D70015', color: '#fff', fontFamily: EN, fontWeight: 800, fontSize: 92, letterSpacing: 2, boxShadow: '0 22px 40px -14px rgba(215,0,21,.55)', display: 'flex', alignItems: 'center', gap: 18}}>
+        <Ico n="phone" size={70} color="#fff" />{'9'.repeat(n)}
+      </div>
+    </div>
+  );
+};
+
+// the doctors pop in round the phone, one per spoken word of «استشاريون للكبار والأطفال»
+const DOCS: [string, number, number, number][] = [['img/haifa-cut.webp', 471, 170, 1060], ['img/said-cut.webp', 493, 910, 1260], ['img/wafaa-cut.webp', 511, 175, 1500]];
+const Doctors: React.FC<{f: number}> = ({f}) => {
+  const {fps} = useVideoConfig();
+  if (f < 471 || f > 538) return null;
+  const leave = io(p(f, 528, 9));
+  return (
+    <>
+      {DOCS.map(([src, at, x, y], i) => {
+        if (f < at) return null;
+        const k = spring({frame: f - at, fps, config: {damping: 11, stiffness: 220, mass: 0.6}});
+        const bob = Math.sin((f - at) / 12) * 8;
+        return (
+          <div key={i} style={{position: 'absolute', left: x - 115, top: y - 115 + bob - leave * 1500, width: 230, height: 230, borderRadius: '50%', overflow: 'hidden', background: 'radial-gradient(circle at 50% 40%, #EADFFF, #B79BFF)', border: '8px solid #fff', boxShadow: '0 24px 44px -18px rgba(90,40,200,.5)', transform: `scale(${k}) rotate(${(1 - k) * (i % 2 ? 20 : -20)}deg)`}}>
+            <Img src={staticFile(src)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 12%'}} />
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
+// «عبر واتساب»: a WhatsApp-green sticker slaps on, then «تم ✓»
+const Whats: React.FC<{f: number}> = ({f}) => {
+  const {fps} = useVideoConfig();
+  if (f < 606 || f > 642) return null;
+  const a = spring({frame: f - 606, fps, config: {damping: 10, stiffness: 260, mass: 0.55}});
+  const b = spring({frame: f - 618, fps, config: {damping: 10, stiffness: 260, mass: 0.55}});
+  const leave = io(p(f, 632, 9));
+  const pill = (txt: string, k: number, x: number, y: number, rot: number) => (
+    <div dir="rtl" style={{position: 'absolute', left: x, top: y - leave * 1500, padding: '20px 38px', borderRadius: 999, background: '#25D366', color: '#fff', fontFamily: AR, fontWeight: 700, fontSize: 58, boxShadow: '0 20px 38px -12px rgba(37,211,102,.55)', transform: `scale(${k}) rotate(${rot * (1 - k) + rot * 0.3}deg)`, opacity: clamp(k * 3)}}>{txt}</div>
+  );
+  return (
+    <>
+      <Row y={470}><Slam f={f} at={606} size={52} weight={600} color="#1DA851" leave={632}>عبر واتساب</Slam></Row>
+      {pill('واتساب', a, 640, 900, 14)}
+      {f >= 618 && pill('تم ✓', b, 90, 1250, -12)}
+    </>
+  );
+};
+
+// ---------------------------------------------------------------- 21.3–24.6 s «مهما كان سؤالك… نحن هنا لنرشدك»
+const Guide: React.FC<{f: number}> = ({f}) => (
+  f < 636 || f > 744 ? null : (
+    <>
+      <Row y={790}><Slam f={f} at={639} leave={734} size={110}>مهما</Slam><Slam f={f} at={649} leave={734} size={110}>كان</Slam><Slam f={f} at={657} leave={734} size={110} color={VIO}>سؤالك</Slam></Row>
+      <Row y={950}><Slam f={f} at={683} leave={734} size={110}>نحن</Slam><Slam f={f} at={694} leave={734} size={110}>هنا</Slam><Slam f={f} at={704} leave={734} size={110} color={VIO}>لنرشدك</Slam></Row>
+      <Chip f={f} at={660} n="heart" x={190} y={700} size={110} rot={-10} leave={734} />
+      <Chip f={f} at={706} n="check" x={890} y={1180} size={110} rot={10} leave={734} />
+      <Chip f={f} at={690} n="star" x={880} y={680} size={80} rot={8} leave={734} />
+    </>
+  )
+);
+
+// ---------------------------------------------------------------- 24.6–28 s typed with the voice, then the mark on the score's final hit
+const Cta: React.FC<{f: number}> = ({f}) => {
+  const {fps} = useVideoConfig();
+  if (f < 736) return null;
+  const text = 'احجز موعدك الآن';
+  const n = Math.min(text.length, Math.max(0, Math.floor((f - 738) / 2.1)));
+  const caret = Math.floor(f / 8) % 2 === 0;
+  const lift = io(p(f, 782, 14));
+  const mark = spring({frame: f - 794, fps, config: {damping: 11, stiffness: 170, mass: 0.7}});
+  return (
+    <AbsoluteFill>
+      <div dir="rtl" style={{position: 'absolute', top: 860 - lift * 260, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 700, fontSize: 120 - lift * 24, color: VIO}}>
+        {text.slice(0, n)}<span style={{display: 'inline-block', width: 8, height: 120, marginRight: 8, background: VIO, verticalAlign: 'middle', opacity: caret && lift < 0.5 ? 1 : 0}} />
+      </div>
+      {f >= 794 && (
+        <>
+          <div style={{position: 'absolute', left: 540, top: 960, transform: `translate(-50%,-50%) scale(${mark})`}}><Mark size={260} /></div>
+          <div style={{position: 'absolute', top: 1110, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 500, fontSize: 52, color: INK, opacity: out(p(f, 804, 10)), transform: `translateY(${(1 - out(p(f, 804, 10))) * 24}px)`}}>neurouniverse.om</div>
+          <div dir="rtl" style={{position: 'absolute', top: 1196, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 500, fontSize: 40, color: GREY, opacity: out(p(f, 812, 10))}}>الرابط في البايو</div>
+        </>
+      )}
+    </AbsoluteFill>
+  );
+};
+
+const SFX: [number, string, number][] = [
+  [9, 'tap', 0.18], [47, 'blip', 0.22], [72, 'blip', 0.22], [95, 'blip', 0.22], [114, 'whoosh', 0.2], [160, 'whip', 0.25], [168, 'bloom', 0.25],
+  [196, 'zip', 0.15], [245, 'spark', 0.25], [258, 'scan', 0.12], [286, 'whoosh', 0.22], [387, 'tap', 0.3], [399, 'tap', 0.3], [413, 'tap', 0.3], [425, 'lock', 0.3],
+  [432, 'whip', 0.22], [471, 'blip', 0.18], [493, 'blip', 0.18], [511, 'blip', 0.18], [527, 'whip', 0.22], [606, 'ding', 0.25], [618, 'star', 0.2],
+  [630, 'whoosh', 0.18], [794, 'bloom', 0.3],
+];
+
 export const Story: React.FC = () => {
   const f = useCurrentFrame();
-  const glow = interpolate(f, [0, 20, 330, 350, 690, 710, 900, 930], [0.3, 0.7, 0.7, 0.35, 0.35, 0.8, 0.9, 0.9], {extrapolateRight: 'clamp'});
+  const glow = interpolate(f, [0, 12, 280, 300, 630, 650, 790, 840], [0.35, 0.7, 0.7, 0.35, 0.35, 0.85, 0.85, 1], {extrapolateRight: 'clamp'});
+  const [sx, sy] = shake(f);
   return (
     <AbsoluteFill>
       <Page glow={glow} />
-      <Hook f={f} />
-      <Ring f={f} />
-      <Clear f={f} />
-      <Brand f={f} />
-      {USES.map((u, i) => <UseScene key={i} f={f} u={u} />)}
-      <Guide f={f} />
-      <Cta f={f} />
-      <Audio src={staticFile('audio/eleven/music.mp3')} loop volume={(g) => interpolate(g, [0, 6, STORY_FRAMES - 40, STORY_FRAMES - 4], [0, 0.8, 0.8, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})} />
-      {([[60, 'blip', 0.25], [75, 'blip', 0.25], [90, 'blip', 0.25], [120, 'whoosh', 0.3], [166, 'bloom', 0.35], [292, 'form', 0.45], [340, 'whoosh', 0.3], [460, 'whoosh', 0.3], [580, 'whoosh', 0.3], [616, 'ding', 0.35], [846, 'bloom', 0.4]] as [number, string, number][]).map(([at, n, v], i) => (
+      <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${1 + kick(f)})`}}>
+        <Hook f={f} />
+        <Symptoms f={f} />
+        <Ring f={f} />
+        <Flood f={f} />
+        <Brand f={f} />
+        {USES.map((u, i) => <UseScene key={i} f={f} u={u} />)}
+        <Counter f={f} />
+        <Doctors f={f} />
+        <Whats f={f} />
+        <Guide f={f} />
+        <Cta f={f} />
+      </AbsoluteFill>
+      <Audio src={staticFile('audio/story/mix.mp3')} />
+      {SFX.map(([at, n, v], i) => (
         <Sequence key={i} from={at}><Audio src={staticFile(`audio/eleven/sfx-${n}.mp3`)} volume={v} /></Sequence>
       ))}
     </AbsoluteFill>
