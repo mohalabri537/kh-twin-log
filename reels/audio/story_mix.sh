@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Mixes for the voiced Story reels, ducked under the voice, -14 LUFS.
-#   ar: voice take B (first 0.7 s of silence trimmed, placed 0.133 s in: voice time t lands at video t - 0.567)
+#   ar: the formal Arabic voice, take B (placed 0.2 s in: voice time t lands at video t + 0.2)
 #       over score variation 2, 28 s -> mix.mp3
 #   en: English voice take B (placed 0.2 s in: voice time t lands at video t + 0.2) over score variation 2,
 #       lengthened by 4 bars (beats 24-40 repeated, so its final hit lands on "today"), 38 s -> mix-en.mp3
@@ -14,7 +14,7 @@ if [ "$LANGV" = en ]; then
   python3 -I audio/extend_score.py "$D/music-2.mp3" "$T/score.wav" 118 0.11 24 40 >/dev/null
   SCORE="$T/score.wav"
 else
-  VO="$D/vo-b.mp3"; VOF="atrim=start=0.7,asetpts=PTS-STARTPTS,adelay=133|133"; LEN=28; OUT="$D/mix.mp3"
+  VO="$D/fus-b.mp3"; VOF="adelay=200|200"; LEN=28; OUT="$D/mix.mp3"
   SCORE="$D/music-2.mp3"
 fi
 # the voice, cleaned and levelled, padded to length
