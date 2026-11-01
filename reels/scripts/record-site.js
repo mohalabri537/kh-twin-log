@@ -4,13 +4,17 @@
 //   capture speed (CDP Animation.setPlaybackRate), so they play at their true speed in the 30 fps result.
 // - Desktop: a real-time screencast (already full size at 1440 px), resampled to 30 fps.
 // Usage: serve the website on http://localhost:8765, then  node scripts/record-site.js public/rec [name...]
+// LANG=en records the English site instead, writing <name>-en.mp4.
 const {chromium} = require('playwright');
 const {execFileSync} = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const OUT = process.argv[2];
 const ONLY = process.argv.slice(3);
-const BASE = 'http://localhost:8765/ar/';
+const EN_SITE = process.env.LANG === 'en';
+const BASE = EN_SITE ? 'http://localhost:8765/' : 'http://localhost:8765/ar/';
+const SUF = EN_SITE ? '-en' : '';
+const LOCALE = EN_SITE ? 'en-GB' : 'ar-OM';
 const FPS = 30;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ease = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
@@ -38,6 +42,10 @@ const PHONE = [
   {name: 'phone-book', url: 'book.html', secs: 4.6, css: '.field:has(#f-mobile){display:none!important}',
     keys: [[0, 380], [0.9, 380], [1.3, 780], [1.9, 780], [2.3, 1000], [2.9, 1000], [3.3, 1330], [3.9, 1330], [4.4, 1500]],
     at: [[0.6, pickJs('svc', 'paeds')], [1.6, pickJs('doc', 'wafaa')], [2.6, pickJs('date', 0)], [3.6, pickJs('time', 0)]]},
+  // one condition page, read down from its title (for the longer English cut)
+  {name: 'phone-condition', url: 'conditions/headache-and-migraine.html', secs: 4.6, keys: [[0, 0], [0.6, 0], [4.4, 1400]]},
+  // the brain games hub
+  {name: 'phone-games', url: 'games.html', secs: 4.6, keys: [[0, 0], [0.6, 0], [4.4, 1300]]},
   // the homepage from the top, for the every-screen shot
   {name: 'phone-home', url: 'index.html', secs: 3.4, keys: [[0, 0], [0.4, 0], [3.3, 700]]},
 ];
@@ -47,8 +55,8 @@ const DESK = [
 ];
 
 async function phone(b, s) {
-  const dir = path.join(OUT, s.name); fs.rmSync(dir, {recursive: true, force: true}); fs.mkdirSync(dir, {recursive: true});
-  const ctx = await b.newContext({viewport: {width: 390, height: 844}, deviceScaleFactor: 2.5, isMobile: true, hasTouch: true, colorScheme: 'light', locale: 'ar-OM', timezoneId: 'Asia/Muscat'});
+  const dir = path.join(OUT, s.name + SUF); fs.rmSync(dir, {recursive: true, force: true}); fs.mkdirSync(dir, {recursive: true});
+  const ctx = await b.newContext({viewport: {width: 390, height: 844}, deviceScaleFactor: 2.5, isMobile: true, hasTouch: true, colorScheme: 'light', locale: LOCALE, timezoneId: 'Asia/Muscat'});
   const p = await ctx.newPage();
   await p.goto(BASE + s.url, {waitUntil: 'networkidle'});
   if (s.css) await p.addStyleTag({content: s.css});
@@ -73,12 +81,12 @@ async function phone(b, s) {
     await c.send('Animation.setPlaybackRate', {playbackRate: rate});
   }
   await ctx.close();
-  encode(dir, s.name);
+  encode(dir, s.name + SUF);
 }
 
 async function desk(b, s) {
-  const dir = path.join(OUT, s.name); fs.rmSync(dir, {recursive: true, force: true}); fs.mkdirSync(dir, {recursive: true});
-  const ctx = await b.newContext({viewport: {width: 1440, height: 900}, deviceScaleFactor: 1, colorScheme: 'light', locale: 'ar-OM', timezoneId: 'Asia/Muscat'});
+  const dir = path.join(OUT, s.name + SUF); fs.rmSync(dir, {recursive: true, force: true}); fs.mkdirSync(dir, {recursive: true});
+  const ctx = await b.newContext({viewport: {width: 1440, height: 900}, deviceScaleFactor: 1, colorScheme: 'light', locale: LOCALE, timezoneId: 'Asia/Muscat'});
   const p = await ctx.newPage();
   await p.goto(BASE + s.url, {waitUntil: 'networkidle'});
   await p.addStyleTag({content: 'html{scrollbar-width:none}::-webkit-scrollbar{display:none}'});
@@ -106,8 +114,8 @@ async function desk(b, s) {
     while (j < frames.length - 1 && frames[j + 1].t <= t) j++;
     fs.writeFileSync(path.join(dir, `${String(i).padStart(4, '0')}.jpg`), Buffer.from(frames[j].data, 'base64'));
   }
-  console.log(s.name, frames.length, 'screencast frames ->', n);
-  encode(dir, s.name);
+  console.log(s.name + SUF, frames.length, 'screencast frames ->', n);
+  encode(dir, s.name + SUF);
 }
 
 function encode(dir, name) {

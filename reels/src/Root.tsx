@@ -9,6 +9,7 @@ import {Film, FILM_FRAMES} from './three/Film';
 import {Motion, MOTION_FRAMES} from './motion/Motion';
 import {Glow, GLOW_FRAMES} from './motion/Glow';
 import {Story, STORY_FRAMES} from './motion/Story';
+import {StoryEN, STORY_EN_FRAMES} from './motion/StoryEN';
 import {StudioCover} from './studio/Cover';
 import {TOTAL as STUDIO_TOTAL} from './studio/plan';
 import {FPS, H, W} from './theme';
@@ -18,6 +19,7 @@ import {FPS, H, W} from './theme';
 export const RemotionRoot: React.FC = () => (
   <>
     <Composition id="Story" component={Story} durationInFrames={STORY_FRAMES} fps={FPS} width={W} height={H} />
+    <Composition id="StoryEN" component={StoryEN} durationInFrames={STORY_EN_FRAMES} fps={FPS} width={W} height={H} />
     <Composition id="Glow" component={Glow} durationInFrames={GLOW_FRAMES} fps={FPS} width={W} height={H} />
     <Composition id="Motion" component={Motion} durationInFrames={MOTION_FRAMES} fps={FPS} width={W} height={H} />
     <Composition id="Film" component={Film} durationInFrames={FILM_FRAMES} fps={FPS} width={W} height={H} />

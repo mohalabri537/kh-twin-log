@@ -9,16 +9,16 @@ import {AR, EN} from '../theme';
 // playing on flat phones. Every cue below is a frame where a word is spoken (voice take B: video frame = 30 t - 17).
 // Audio: public/audio/story/mix.mp3, built by audio/story_mix.sh.
 export const STORY_FRAMES = 840;
-const INK = '#1D1D1F', VIO = '#7431F4', GREY = '#6E6E73';
+export const INK = '#1D1D1F', VIO = '#7431F4', GREY = '#6E6E73';
 
-const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-const io = (t: number) => { const x = clamp(t); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
-const out = (t: number) => 1 - Math.pow(1 - clamp(t), 4);
-const p = (f: number, a: number, d: number) => clamp((f - a) / d);
-const spr = (f: number, at: number, fps: number, c = {damping: 12, stiffness: 160, mass: 0.7}) => spring({frame: f - at, fps, config: c});
+export const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+export const io = (t: number) => { const x = clamp(t); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+export const out = (t: number) => 1 - Math.pow(1 - clamp(t), 4);
+export const p = (f: number, a: number, d: number) => clamp((f - a) / d);
+export const spr = (f: number, at: number, fps: number, c = {damping: 12, stiffness: 160, mass: 0.7}) => spring({frame: f - at, fps, config: c});
 
 // ---------------------------------------------------------------- page: white, a violet glow rising from the bottom, grain
-const Page: React.FC<{glow: number}> = ({glow}) => {
+export const Page: React.FC<{glow: number}> = ({glow}) => {
   const f = useCurrentFrame();
   const seed = Math.floor(f / 2) % 8;
   const w = (k: number) => Math.sin(f / k) * 50;
@@ -34,7 +34,7 @@ const Page: React.FC<{glow: number}> = ({glow}) => {
   );
 };
 
-const Mark: React.FC<{size: number}> = ({size}) => (
+export const Mark: React.FC<{size: number}> = ({size}) => (
   <svg viewBox={LOGO_VB} width={size} height={size * 0.632} style={{overflow: 'visible', display: 'block'}}>
     <defs><linearGradient id="sMark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#A37BFF" /><stop offset="1" stopColor="#5A21D9" /></linearGradient></defs>
     <path d={LOGO_D} fill="url(#sMark)" />
@@ -54,11 +54,11 @@ const ICON: Record<string, string> = {
   check: 'M5 12.5 10 17 19 7',
   phone: 'M6 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2',
 };
-const Ico: React.FC<{n: string; size?: number; color?: string}> = ({n, size = 64, color = VIO}) => (
+export const Ico: React.FC<{n: string; size?: number; color?: string}> = ({n, size = 64, color = VIO}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={ICON[n]} /></svg>
 );
 // a small glass chip holding an icon, popping in with a little overshoot
-const Chip: React.FC<{f: number; at: number; n: string; x: number; y: number; size?: number; rot?: number; leave?: number}> = ({f, at, n, x, y, size = 96, rot = 0, leave = 1e9}) => {
+export const Chip: React.FC<{f: number; at: number; n: string; x: number; y: number; size?: number; rot?: number; leave?: number}> = ({f, at, n, x, y, size = 96, rot = 0, leave = 1e9}) => {
   const {fps} = useVideoConfig();
   const k = spr(f, at, fps) * (1 - io(p(f, leave, 10)));
   if (f < at || k <= 0.001) return null;
@@ -75,17 +75,17 @@ const Word: React.FC<{f: number; at: number; leave?: number; children: React.Rea
   const k = out(p(f, at, 12)) * (1 - io(p(f, leave, 8)));
   return <span style={{display: 'inline-block', fontFamily: AR, fontWeight: weight, fontSize: size, color, lineHeight: 1.3, opacity: k, transform: `translateY(${(1 - k) * 40}px)`, filter: `blur(${(1 - k) * 8}px)`, padding: '0 .14em'}}>{children}</span>;
 };
-const Row: React.FC<{y: number; children: React.ReactNode}> = ({y, children}) => (
-  <div dir="rtl" style={{position: 'absolute', top: y, left: 60, right: 60, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center'}}>{children}</div>
+export const Row: React.FC<{y: number; children: React.ReactNode; dir?: 'rtl' | 'ltr'}> = ({y, children, dir = 'rtl'}) => (
+  <div dir={dir} style={{position: 'absolute', top: y, left: 60, right: 60, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center'}}>{children}</div>
 );
 
 // a word that lands hard: drops in large and snaps to size on a stiff spring (for the spoken key words)
-const Slam: React.FC<{f: number; at: number; leave?: number; children: React.ReactNode; color?: string; size?: number; weight?: number}> = ({f, at, leave = 1e9, children, color = INK, size = 96, weight = 600}) => {
+export const Slam: React.FC<{f: number; at: number; leave?: number; children: React.ReactNode; color?: string; size?: number; weight?: number; font?: string}> = ({f, at, leave = 1e9, children, color = INK, size = 96, weight = 600, font = AR}) => {
   const {fps} = useVideoConfig();
-  if (f < at) return <span style={{display: 'inline-block', fontFamily: AR, fontWeight: weight, fontSize: size, lineHeight: 1.3, padding: '0 .14em', opacity: 0}}>{children}</span>;
+  if (f < at) return <span style={{display: 'inline-block', fontFamily: font, fontWeight: weight, fontSize: size, lineHeight: 1.3, padding: '0 .14em', opacity: 0}}>{children}</span>;
   const k = spring({frame: f - at, fps, config: {damping: 14, stiffness: 260, mass: 0.6}});
   const l = io(p(f, leave, 7));
-  return <span style={{display: 'inline-block', fontFamily: AR, fontWeight: weight, fontSize: size, color, lineHeight: 1.3, padding: '0 .14em', opacity: clamp(k * 3) * (1 - l), transform: `translateY(${-l * 60}px) scale(${1.35 - 0.35 * k})`, filter: `blur(${l * 10}px)`}}>{children}</span>;
+  return <span style={{display: 'inline-block', fontFamily: font, fontWeight: weight, fontSize: size, color, lineHeight: 1.3, padding: '0 .14em', opacity: clamp(k * 3) * (1 - l), transform: `translateY(${-l * 60}px) scale(${1.35 - 0.35 * k})`, filter: `blur(${l * 10}px)`}}>{children}</span>;
 };
 
 // the whole frame kicks a little on every cut (a quick zoom that settles), and shakes on the counter's stamps
@@ -144,7 +144,7 @@ const Symptoms: React.FC<{f: number}> = ({f}) => {
 };
 
 // ---------------------------------------------------------------- 4–6.4 s a ring of the site and the doctors, «تبحث عن إجابة واضحة؟»
-const RING = ['cap/panels-hd/hero.jpg', 'img/haifa-cut.webp', 'cap/panels-hd/conditions.jpg', 'img/said-cut.webp', 'cap/panels-hd/games.jpg', 'img/wafaa-cut.webp', 'cap/panels-hd/booking.jpg', 'cap/panels-hd/doctors.jpg'];
+export const RING = ['cap/panels-hd/hero.jpg', 'img/haifa-cut.webp', 'cap/panels-hd/conditions.jpg', 'img/said-cut.webp', 'cap/panels-hd/games.jpg', 'img/wafaa-cut.webp', 'cap/panels-hd/booking.jpg', 'cap/panels-hd/doctors.jpg'];
 const Ring: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
   if (f < 114 || f > 186) return null;
