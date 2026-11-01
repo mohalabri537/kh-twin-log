@@ -17,7 +17,9 @@ if [ "$LANGV" = en ]; then
   SCORE="$T/score.wav"
 else
   # «ومتى تتصل برقم الطوارئ» re-recorded and spliced over the line that read out 9999
-  python3 -I audio/splice_line.py "$D/fus-b.mp3" "$D/line-ar-emergency.mp3" "$T/vo-src.wav" 8.757 13.169 >/dev/null
+  python3 -I audio/splice_line.py "$D/fus-b.mp3" "$D/line-ar-emergency.mp3" "$T/vo-1.wav" 8.757 13.169 >/dev/null
+  # «نيورو يونيفرس… بموقعها الجديد» re-recorded over the clinic-name line (the take's voice glitched high on it)
+  python3 -I audio/splice_line.py "$T/vo-1.wav" "$D/line-ar-neurouniverse.mp3" "$T/vo-src.wav" 5.88 8.566
   VO="$T/vo-src.wav"; VOF="adelay=200|200"; LEN=28; OUT="$D/mix.mp3"
   SCORE="$D/music-2.mp3"
 fi

@@ -54,7 +54,9 @@ export const Page: React.FC<{plan: Plan}> = ({plan}) => {
   const pulse = bi < 0 ? 0 : Math.exp(-(f - plan.beats[bi]) / 7);
   const intro = io(p(f, 0, 24));
   return (
-    <AbsoluteFill style={{background: '#FFFFFF', overflow: 'hidden'}}>
+    <AbsoluteFill style={{background: '#F4F1FB', overflow: 'hidden'}}>
+      {/* the lilac-light stage (from the NeuroUniverse-Devices project) under the arcs */}
+      <Img src={staticFile('stage/lilac-light.png')} style={{position: 'absolute', inset: 0, width: 1080, height: 1920, transform: `scale(1.04) translate(${-8 + 15 * Math.sin(f / 120)}px, ${8 - 15 * Math.sin(f / 140)}px)`}} />
       {/* loads the grain before the frame is taken (the filter's image is then already in the cache) */}
       <Img src={noise} style={{position: 'absolute', width: 1, height: 1, opacity: 0}} />
       <svg width="1080" height="1920" style={{position: 'absolute', inset: 0}}>
@@ -176,7 +178,7 @@ export const Slam: React.FC<{f: number; at: number; leave?: number; children: Re
 };
 
 // the whole frame kicks a little on every cut (a quick zoom that settles), and shakes on the counter's stamps
-const CUTS = [6, 31, 55, 83, 123, 162, 188, 246, 266, 310, 355, 369, 377, 385, 408, 455, 477, 494, 521, 583, 608, 646, 703, 797];
+const CUTS = [6, 31, 55, 83, 123, 162, 182, 246, 266, 310, 355, 369, 377, 385, 408, 455, 477, 494, 521, 583, 608, 646, 703, 797];
 const SHAKES = [355, 369, 377, 385];
 const kick = (f: number) => {
   const c = CUTS.filter((x) => x <= f).pop();
@@ -270,12 +272,12 @@ const Flood: React.FC<{f: number}> = ({f}) => {
   );
 };
 
-// ---------------------------------------------------------------- 6.2–8.9 s «طبُّ وعلومُ الأعصاب… بموقعها الجديد»: the mark lands on the score's lift
+// ---------------------------------------------------------------- 6–8.9 s «نيورو يونيفرس… بموقعها الجديد»: the mark lands on the score's lift
 const Brand: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
-  if (f < 186 || f > 270) return null;
+  if (f < 180 || f > 270) return null;
   const grow = spring({frame: f - 246, fps, config: {damping: 11, stiffness: 170, mass: 0.7}});
-  const up = io(p(f, 226, 14)); // the name moves up to make room for the address
+  const up = io(p(f, 222, 14)); // the name moves up to make room for the address
   const leave = io(p(f, 260, 9));
   const url = 'neurouniverse.om';
   const typed = Math.min(url.length, Math.max(0, Math.floor((f - 250) / 1.1)));
@@ -283,11 +285,11 @@ const Brand: React.FC<{f: number}> = ({f}) => {
     <AbsoluteFill style={{opacity: 1 - leave, transform: `translateY(${-leave * 140}px)`}}>
       {f >= 246 && <div style={{position: 'absolute', left: 540, top: 640, transform: `translate(-50%,-50%) scale(${grow * 0.75})`}}><Mark size={360} /></div>}
       <div style={{position: 'absolute', top: 1040 - up * 240, width: '100%'}}>
-        <Row y={0}><Slam f={f} at={188} size={92} weight={300}>طبُّ</Slam><Slam f={f} at={194} size={92} weight={300}>وعلومُ</Slam><Slam f={f} at={204} size={92} weight={300} color={VIO}>الأعصاب</Slam></Row>
+        <Row y={0} dir="ltr"><Slam f={f} at={182} size={104} weight={300} font={EN}>Neuro</Slam><Slam f={f} at={199} size={104} weight={300} font={EN} color={VIO}>Universe</Slam></Row>
       </div>
-      {f >= 226 && (
+      {f >= 222 && (
         <>
-          <Row y={950}><Slam f={f} at={226} size={64} color={GREY} weight={300}>بموقعها</Slam><Slam f={f} at={246} size={64} color={VIO}>الجديد</Slam></Row>
+          <Row y={950}><Slam f={f} at={222} size={64} color={GREY} weight={300}>بموقعها</Slam><Slam f={f} at={246} size={64} color={VIO}>الجديد</Slam></Row>
           <div style={{position: 'absolute', left: 210, top: 1090, width: 660, height: 104, borderRadius: 52, background: 'rgba(255,255,255,.92)', boxShadow: '0 20px 40px -18px rgba(90,40,200,.45), inset 0 0 0 1.5px rgba(124,80,255,.18)', display: 'flex', alignItems: 'center', gap: 20, padding: '0 36px', transform: `scale(${spr(f, 246, fps)})`}}>
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={VIO} strokeWidth="2.2" strokeLinecap="round"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
             <span style={{fontFamily: EN, fontWeight: 300, fontSize: 46, color: INK}}>{url.slice(0, typed)}<span style={{display: 'inline-block', width: 4, height: 46, marginLeft: 4, background: VIO, verticalAlign: 'middle', opacity: Math.floor(f / 8) % 2 ? 1 : 0}} /></span>
@@ -298,12 +300,59 @@ const Brand: React.FC<{f: number}> = ({f}) => {
   );
 };
 
-// ---------------------------------------------------------------- 8.9–20.2 s three stops on a flat phone, each cut in on its spoken title
-type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]};
+// ---------------------------------------------------------------- the real memory game, played in the phone
+// States photographed from the site's own game (scripts/capture-game.cjs, public/cap/game-*): the start screen, the three
+// tiles lighting, "your turn", the three taps and "Correct!". Each tap shows a ripple where the finger lands.
+export type GameCues = {lang: 'ar' | 'en'; start: number; watch: [number, number, number]; input: number; taps: [number, number, number]; success: number};
+const GAME_TAPS = {ar: [[96.67, 214.74], [195.01, 318.07], [195.01, 421.41]], en: [[298.33, 214.74], [194.99, 318.07], [194.99, 421.41]]} as const;
+const GAME_START: [number, number] = [195, 523.83];
+const gameState = (g: GameCues, f: number) => {
+  if (f >= g.success) return 'success';
+  for (let i = 2; i >= 0; i--) if (f >= g.taps[i]) return `tap${i}`;
+  if (f >= g.input) return 'input';
+  for (let i = 2; i >= 0; i--) if (f >= g.watch[i]) return f >= g.watch[i] + 9 ? 'watch' : `watch${i}`;
+  return 'intro';
+};
+export const GamePhone: React.FC<{f: number; g: GameCues; k?: number; top?: number}> = ({f, g, k = 0.9, top = 548}) => {
+  const touches: [number, number, number][] = [[g.start, ...GAME_START], ...g.taps.map((t, i) => [t, GAME_TAPS[g.lang][i][0], GAME_TAPS[g.lang][i][1]] as [number, number, number])];
+  return (
+    <Phone src={`game-${g.lang}/${gameState(g, f)}.jpg`} k={k} cx={540} top={top} lift={10}>
+      {touches.map(([when, x, y]) => {
+        if (f < when || f >= when + 13) return null;
+        const t = (f - when) / 13, d = 14 + 52 * t;
+        return <div key={when} style={{position: 'absolute', left: x - d / 2, top: y - d / 2, width: d, height: d, borderRadius: '50%', border: '2.5px solid rgba(80,44,143,.75)', background: 'rgba(150,106,230,.10)', opacity: (1 - t) * 0.85, boxSizing: 'border-box'}} />;
+      })}
+    </Phone>
+  );
+};
+
+// ---------------------------------------------------------------- the close: the stage gives way to the grainy violet field
+// (the end card of the NeuroUniverse-Devices project): the white lockup, "our new website", and the address, large.
+export const Finale: React.FC<{f: number; at: number; line: string; lang: 'ar' | 'en'}> = ({f, at, line, lang}) => {
+  if (f < at) return null;
+  const field = io(p(f, at, 15));
+  const a = out(p(f, at + 6, 18)), b = out(p(f, at + 13, 18)), c = out(p(f, at + 19, 18));
+  return (
+    <AbsoluteFill style={{opacity: field}}>
+      <Img src={staticFile('stage/violet-field.png')} style={{position: 'absolute', inset: 0, width: 1080, height: 1920}} />
+      <AbsoluteFill style={{mixBlendMode: 'overlay', opacity: 0.3}}>
+        {Array.from({length: 12}, (_, i) => <Img key={i} src={staticFile('stage/grain-512.png')} style={{position: 'absolute', left: (i % 3) * 512, top: Math.floor(i / 3) * 512, width: 512, height: 512}} />)}
+      </AbsoluteFill>
+      <Img src={staticFile('stage/logo-lockup.svg')} style={{position: 'absolute', left: 290, width: 500, top: 640 + 15 * (1 - a), filter: 'brightness(0) invert(1)', opacity: a}} />
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'} style={{position: 'absolute', width: '100%', textAlign: 'center', top: 846 + 12 * (1 - b), fontFamily: lang === 'ar' ? AR : EN, fontWeight: 300, fontSize: 56, color: '#EEE8FF', opacity: b}}>{line}</div>
+      <div style={{position: 'absolute', width: '100%', textAlign: 'center', top: 960 + 12 * (1 - c), fontFamily: EN, fontWeight: 300, fontSize: 96, letterSpacing: '-0.045em', color: '#fff', opacity: c}}>NeuroUniverse.om</div>
+    </AbsoluteFill>
+  );
+};
+
+// ---------------------------------------------------------------- 8.9–23.5 s four stops on a flat phone, each cut in on its spoken title
+type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]; game?: GameCues};
 const USES: Use[] = [
   {from: 266, to: 405, rec: 'phone-guide.mp4', head: [['اعرفْ', 269], ['أعراضَك', 282, VIO]], sub: [['ومتى', 310], ['تتصلُ', 326], ['برقمِ', 344], ['الطوارئ', 355, '#D70015']], chips: [['heart', 200, 1000, 284], ['wave', 860, 1150, 300], ['head', 200, 1260, 312]]},
   {from: 403, to: 521, rec: 'phone-doctors.mp4', head: [['تعرَّفْ على', 408], ['أطبائنا', 426, VIO]], sub: [['استشاريون', 455], ['للكبار', 477], ['والأطفال', 494, VIO]], chips: [['star', 860, 900, 432]]},
   {from: 518, to: 606, rec: 'phone-book.mp4', head: [['احجزْ', 521], ['موعدَك', 534, VIO]], sub: [['في دقيقة', 547]], chips: [['cal', 200, 960, 536], ['check', 200, 1260, 556]]},
+  {from: 604, to: 704, rec: '', head: [['صحةُ', 608], ['دماغِك', 621, VIO]], sub: [['تستحقُّ', 646], ['إجابةً', 662], ['واضحة', 678, VIO]], chips: [['head', 200, 960, 624], ['check', 860, 1260, 684]],
+    game: {lang: 'ar', start: 612, watch: [618, 630, 642], input: 652, taps: [658, 668, 678], success: 684}},
 ];
 const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
   const {fps} = useVideoConfig();
@@ -319,7 +368,7 @@ const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
       </div>
       <Sequence from={u.from} durationInFrames={u.to - u.from + 4} layout="none">
         <AbsoluteFill style={{transform: `translateY(${(1 - rise) * 1300}px) rotate(${(1 - rise) * 5}deg)`}}>
-          <Phone src={u.rec} k={0.9} cx={540} top={548} lift={10} />
+          {u.game ? <GamePhone f={f} g={u.game} /> : <Phone src={u.rec} k={0.9} cx={540} top={548} lift={10} />}
         </AbsoluteFill>
       </Sequence>
       {u.chips.map(([n, x, y, at], i) => <Chip key={i} f={f} at={at} n={n} x={x} y={y} rot={i % 2 ? 10 : -10} />)}
@@ -386,51 +435,30 @@ const Whats: React.FC<{f: number}> = ({f}) => {
   );
 };
 
-// ---------------------------------------------------------------- 20.1–23.2 s «صحةُ دماغِك… تستحقُّ إجابةً واضحة»
-const Brain: React.FC<{f: number}> = ({f}) => (
-  f < 604 || f > 708 ? null : (
-    <>
-      <Row y={770}><Slam f={f} at={608} leave={698} size={120}>صحةُ</Slam><Slam f={f} at={621} leave={698} size={120} color={VIO}>دماغِك</Slam></Row>
-      <Row y={960}><Slam f={f} at={646} leave={698} size={84} weight={200}>تستحقُّ</Slam><Slam f={f} at={662} leave={698} size={84} weight={200}>إجابةً</Slam><Slam f={f} at={678} leave={698} size={84} color={VIO}>واضحة</Slam></Row>
-      <Chip f={f} at={622} n="head" x={190} y={660} size={110} rot={-10} leave={698} />
-      <Chip f={f} at={680} n="check" x={850} y={1220} size={100} rot={10} leave={698} />
-      <Chip f={f} at={650} n="heart" x={850} y={640} size={80} rot={8} leave={698} />
-    </>
-  )
-);
-
 // ---------------------------------------------------------------- 23.2–28 s typed with the voice, then the mark on the score's final hit
 const Cta: React.FC<{f: number}> = ({f}) => {
-  const {fps} = useVideoConfig();
   if (f < 700) return null;
   // typed word by word as it is spoken
   const parts: [string, number][] = [['احجز ', 703], ['موعدك ', 715], ['الآن', 729]];
   let text = '';
   for (const [w, at] of parts) text += w.slice(0, Math.max(0, Math.min(w.length, Math.floor((f - at) / 1.6) + 1)));
   const caret = Math.floor(f / 8) % 2 === 0;
-  const lift = io(p(f, 782, 14));
-  const mark = spring({frame: f - 797, fps, config: {damping: 11, stiffness: 170, mass: 0.7}});
+  const lift = io(p(f, 786, 12));
   return (
     <AbsoluteFill>
-      <div dir="rtl" style={{position: 'absolute', top: 840 - lift * 260, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 300, fontSize: 120 - lift * 24, color: VIO}}>
-        {f >= 703 ? text : ''}<span style={{display: 'inline-block', width: 8, height: 120, marginRight: 8, background: VIO, verticalAlign: 'middle', opacity: caret && lift < 0.5 ? 1 : 0}} />
+      <div dir="rtl" style={{position: 'absolute', top: 840 - lift * 60, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 300, fontSize: 120, color: VIO, opacity: 1 - lift}}>
+        {f >= 703 ? text : ''}<span style={{display: 'inline-block', width: 8, height: 120, marginRight: 8, background: VIO, verticalAlign: 'middle', opacity: caret ? 1 : 0}} />
       </div>
-      {f >= 797 && (
-        <>
-          <div style={{position: 'absolute', left: 540, top: 960, transform: `translate(-50%,-50%) scale(${mark})`}}><Mark size={260} /></div>
-          <div style={{position: 'absolute', top: 1110, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 52, color: INK, opacity: out(p(f, 806, 10)), transform: `translateY(${(1 - out(p(f, 806, 10))) * 24}px)`}}>neurouniverse.om</div>
-          <div dir="rtl" style={{position: 'absolute', top: 1196, width: '100%', textAlign: 'center', fontFamily: AR, fontWeight: 300, fontSize: 40, color: GREY, opacity: out(p(f, 814, 10))}}>طبّ وعلوم الأعصاب · مسقط · الرابط في البايو</div>
-        </>
-      )}
+      <Finale f={f} at={790} line="موقعنا الجديد" lang="ar" />
     </AbsoluteFill>
   );
 };
 
 const SFX: [number, string, number][] = [
   [6, 'blip', 0.22], [31, 'blip', 0.22], [55, 'blip', 0.22], [76, 'whoosh', 0.2], [152, 'whip', 0.25], [162, 'bloom', 0.25],
-  [186, 'zip', 0.15], [246, 'spark', 0.25], [250, 'scan', 0.12], [262, 'whoosh', 0.22], [355, 'tap', 0.3], [369, 'tap', 0.3], [377, 'tap', 0.3], [385, 'lock', 0.3],
+  [180, 'zip', 0.15], [246, 'spark', 0.25], [250, 'scan', 0.12], [262, 'whoosh', 0.22], [355, 'tap', 0.3], [369, 'tap', 0.3], [377, 'tap', 0.3], [385, 'lock', 0.3],
   [397, 'whip', 0.22], [455, 'blip', 0.18], [477, 'blip', 0.18], [494, 'blip', 0.18], [513, 'whip', 0.22], [583, 'ding', 0.25], [594, 'star', 0.2],
-  [600, 'whoosh', 0.18], [797, 'bloom', 0.3],
+  [600, 'whoosh', 0.18], [612, 'tap', 0.2], [658, 'tap', 0.22], [668, 'tap', 0.22], [678, 'tap', 0.22], [684, 'ding', 0.25], [797, 'bloom', 0.3],
 ];
 
 // the arc system: a pose per scene (centre x, y, scale, rotation) and the spoken beats that pulse the arcs (see Page)
@@ -440,7 +468,6 @@ const PLAN: Plan = {
     [74, [540, 900, 0.92, 0]], // orbits round the floating cards
     [186, [540, 2150, 1.15, -60]], // sinking low, under the name
     [262, [540, 1120, 0.78, 90]], // a frame round the phone, under the titles
-    [604, [540, 2040, 1.0, -90]], // horizon again under the brain line
     [736, [540, 2280, 1.12, -120]], // and low again under the call to action, like the opening
   ],
   beats: [6, 31, 55, 162, 246, 355, 369, 377, 385, 455, 477, 494, 583, 621, 678, 797],
@@ -461,7 +488,6 @@ export const Story: React.FC = () => {
         <Counter f={f} />
         <Doctors f={f} />
         <Whats f={f} />
-        <Brain f={f} />
         <Cta f={f} />
       </AbsoluteFill>
       <Audio src={staticFile('audio/story/mix.mp3')} />

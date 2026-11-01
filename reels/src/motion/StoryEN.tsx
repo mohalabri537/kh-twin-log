@@ -2,7 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Img, interpolate, Sequence, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {Phone} from '../studio/devices';
 import {EN_THIN as EN} from '../theme';
-import {Chip, Plan, clamp, GREY, Ico, INK, io, Mark, out, p, Page, RING, Row, Slam as SlamAR, spr, VIO} from './Story';
+import {Chip, Finale, GameCues, GamePhone, Plan, clamp, GREY, Ico, INK, io, Mark, out, p, Page, RING, Row, Slam as SlamAR, spr, VIO} from './Story';
 
 // The longer English cut of the Story reel (38 s, 30 fps): the same look and score as the Arabic one, with a British
 // voice-over, the English site on the phones, two more stops (a condition page and the brain games) and word-by-word
@@ -190,11 +190,12 @@ const Brand: React.FC<{f: number}> = ({f}) => {
 };
 
 // ---------------------------------------------------------------- 12.4–30.8 s five stops on a flat phone, each cut in on its spoken title
-type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]};
+type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]; game?: GameCues};
 const USES: Use[] = [
   {from: 372, to: 500, rec: 'phone-guide-en.mp4', head: [['A clear', 378], ['symptom guide', 389, VIO]], sub: [['and when', 427], ['to call', 446], ['the emergency number', 458, '#D70015']], chips: [['heart', 200, 1000, 394], ['wave', 860, 1150, 406], ['head', 200, 1260, 416]]},
   {from: 496, to: 598, rec: 'phone-condition-en.mp4', head: [['Conditions', 503], ['explained', 516, VIO]], sub: [['in plain', 541], ['language', 568, VIO]], chips: [['head', 860, 960, 520], ['check', 200, 1240, 570]]},
-  {from: 594, to: 694, rec: 'phone-games-en.mp4', head: [['Brain', 600], ['games', 605, VIO]], sub: [['to test your', 617], ['memory', 646], ['and', 656], ['focus', 665, VIO]], chips: [['bolt', 200, 960, 632]]},
+  {from: 594, to: 694, rec: 'phone-games-en.mp4', head: [['Brain', 600], ['games', 605, VIO]], sub: [['to test your', 617], ['memory', 646], ['and', 656], ['focus', 665, VIO]], chips: [['bolt', 200, 960, 632]],
+    game: {lang: 'en', start: 604, watch: [612, 624, 636], input: 646, taps: [650, 659, 668], success: 674}},
   {from: 690, to: 807, rec: 'phone-doctors-en.mp4', head: [['Meet our', 696], ['doctors', 707, VIO]], sub: [['Consultants for', 734], ['adults', 759], ['and children', 771, VIO]], chips: [['star', 860, 900, 712]]},
   {from: 803, to: 928, rec: 'phone-book-en.mp4', head: [['Book your', 817], ['appointment', 831, VIO]], sub: [['in a few', 843], ['simple', 865], ['steps', 877]], chips: [['cal', 200, 960, 838], ['check', 200, 1260, 880]]},
 ];
@@ -212,7 +213,7 @@ const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
       </div>
       <Sequence from={u.from} durationInFrames={u.to - u.from + 4} layout="none">
         <AbsoluteFill style={{transform: `translateY(${(1 - rise) * 1300}px) rotate(${(1 - rise) * 5}deg)`}}>
-          <Phone src={u.rec} k={0.9} cx={540} top={548} lift={10} />
+          {u.game ? <GamePhone f={f} g={u.game} /> : <Phone src={u.rec} k={0.9} cx={540} top={548} lift={10} />}
         </AbsoluteFill>
       </Sequence>
       {u.chips.map(([n, x, y, at], i) => <Chip key={i} f={f} at={at} n={n} x={x} y={y} rot={i % 2 ? 10 : -10} />)}
@@ -312,27 +313,19 @@ const Guide: React.FC<{f: number}> = ({f}) => (f < 925 || f > 1018 ? null : (
 
 // ---------------------------------------------------------------- 33.8–38 s typed with the voice, the mark on the score's final hit
 const Cta: React.FC<{f: number}> = ({f}) => {
-  const {fps} = useVideoConfig();
   if (f < 1012) return null;
   // typed word by word as it is spoken
   const parts: [string, number][] = [['Book ', 1019], ['your ', 1025], ['appointment ', 1031], ['today.', 1042]];
   let text = '';
   for (const [w, at] of parts) text += w.slice(0, Math.max(0, Math.min(w.length, Math.floor((f - at) / 1.1) + 1)));
   const caret = Math.floor(f / 8) % 2 === 0;
-  const lift = io(p(f, 1048, 14));
-  const mark = spring({frame: f - 1050, fps, config: {damping: 11, stiffness: 170, mass: 0.7}});
+  const lift = io(p(f, 1048, 10));
   return (
     <AbsoluteFill>
-      <div style={{position: 'absolute', left: 60, right: 60, top: 800 - lift * 260, textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 112 - lift * 28, lineHeight: 1.15, letterSpacing: -2, color: VIO}}>
-        {f >= 1019 ? text : ''}<span style={{display: 'inline-block', width: 8, height: 110 - lift * 28, marginLeft: 8, background: VIO, verticalAlign: 'middle', opacity: caret && lift < 0.5 ? 1 : 0}} />
+      <div style={{position: 'absolute', left: 60, right: 60, top: 800 - lift * 60, textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 112, lineHeight: 1.15, letterSpacing: -2, color: VIO, opacity: 1 - lift}}>
+        {f >= 1019 ? text : ''}<span style={{display: 'inline-block', width: 8, height: 110, marginLeft: 8, background: VIO, verticalAlign: 'middle', opacity: caret ? 1 : 0}} />
       </div>
-      {f >= 1050 && (
-        <>
-          <div style={{position: 'absolute', left: 540, top: 1000, transform: `translate(-50%,-50%) scale(${mark})`}}><Mark size={260} /></div>
-          <div style={{position: 'absolute', top: 1150, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 54, color: INK, opacity: out(p(f, 1060, 10)), transform: `translateY(${(1 - out(p(f, 1060, 10))) * 24}px)`}}>neurouniverse.om</div>
-          <div style={{position: 'absolute', top: 1236, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 40, color: GREY, opacity: out(p(f, 1068, 10))}}>Neuro Universe Clinic · Muscat · Link in bio</div>
-        </>
-      )}
+      <Finale f={f} at={1050} line="Our new website" lang="en" />
     </AbsoluteFill>
   );
 };
@@ -340,7 +333,7 @@ const Cta: React.FC<{f: number}> = ({f}) => {
 const SFX: [number, string, number][] = [
   [6, 'tap', 0.18], [81, 'blip', 0.22], [107, 'blip', 0.22], [135, 'blip', 0.22], [168, 'whoosh', 0.2], [218, 'whip', 0.25], [230, 'bloom', 0.25],
   [264, 'zip', 0.15], [281, 'spark', 0.25], [330, 'scan', 0.12], [368, 'whoosh', 0.22], [461, 'tap', 0.3], [469, 'tap', 0.3], [476, 'tap', 0.3], [484, 'lock', 0.3],
-  [492, 'whip', 0.22], [590, 'whip', 0.22], [646, 'blip', 0.18], [656, 'blip', 0.18], [665, 'star', 0.2], [686, 'whip', 0.22],
+  [492, 'whip', 0.22], [590, 'whip', 0.22], [604, 'tap', 0.2], [646, 'blip', 0.15], [650, 'tap', 0.22], [659, 'tap', 0.22], [668, 'tap', 0.22], [674, 'ding', 0.25], [686, 'whip', 0.22],
   [734, 'blip', 0.18], [759, 'blip', 0.18], [783, 'blip', 0.18], [799, 'whip', 0.22], [902, 'ding', 0.25], [912, 'star', 0.2], [920, 'whoosh', 0.18], [1050, 'bloom', 0.3],
 ];
 
