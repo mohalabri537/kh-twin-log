@@ -1,0 +1,30 @@
+{
+  "name": "neuro-universe-launch-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Instagram launch reel for neurouniverse.om, built with Remotion",
+  "scripts": {
+    "studio": "remotion studio",
+    "audio": "python3 audio/make_audio.py",
+    "render": "remotion render src/index.ts LaunchReel out/neuro-universe-launch-reel.mp4 --codec=h264 --crf=17 --audio-bitrate=320k",
+    "render:studio": "remotion render StudioReel out/neuro-universe-studio.mp4 --crf=16",
+    "cover:studio": "remotion still StudioCover out/neuro-universe-studio-cover.png",
+    "audio:studio": "python3 audio/studio_mix.py"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^8.17.10",
+    "@remotion/cli": "4.0.539",
+    "@remotion/fonts": "4.0.539",
+    "@remotion/paths": "4.0.539",
+    "@remotion/three": "^4.0.539",
+    "@types/three": "^0.170.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.539",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}

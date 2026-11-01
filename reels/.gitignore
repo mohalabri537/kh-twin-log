@@ -1,0 +1,7 @@
+node_modules
+out
+public/audio/eleven/candidates
+public/audio/studio/candidates
+public/rec/*/
+public/hdri/*.hdr
+public/audio/story/candidates

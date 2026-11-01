@@ -1,0 +1,27 @@
+{
+  "music": {
+    "prompt": "29-second cinematic tech product launch score for a modern neurology clinic website. 120 BPM, D minor. Opens dark and spacious with a deep sub drone and delicate glassy digital sparkles (0-4s), a deep boom at 2s. At 4s a clean, straight 16th-note analog synth arpeggio sequence starts with deep half-time cinematic drums and a big reverb snare, warm sub bass and dark pads. Precise, futuristic, premium and confident like an Apple or Linear launch film. Builds from 17s with a snare roll and riser into a peak at 19s with four-on-the-floor drums until 23s. At 23s the drums drop out, a swell rises into a bright, glassy resolving chord at 24.5s, ending on a warm D major chord with a long tail. Instrumental only. No swing, no funk, no vocals.",
+    "length_ms": 29000
+  },
+  "sfx": {
+    "boom": {"text": "deep cinematic sub boom impact with a short dark tail", "duration": 2.0},
+    "form": {"text": "futuristic logo reveal: deep boom with a glassy shimmering chord, clean and premium", "duration": 2.4},
+    "bloom": {"text": "bright airy light bloom swell, glassy shimmer opening up, futuristic", "duration": 1.6},
+    "spark": {"text": "tiny electrical neuron sparks crackling, delicate digital static", "duration": 0.6},
+    "blip": {"text": "short clean futuristic UI blip, digital interface beep", "duration": 0.5},
+    "tap": {"text": "soft glassy touchscreen tap with a clean bell tone", "duration": 0.8},
+    "star": {"text": "small sparkling chime, bright and clean", "duration": 0.6},
+    "scan": {"text": "holographic scan sweep, rising digital tone with airy noise", "duration": 0.7},
+    "lock": {"text": "futuristic UI element snapping into place, crisp click with low thud and a high ping", "duration": 0.5},
+    "zip": {"text": "fast short digital zip swoosh upward", "duration": 0.5},
+    "flyby": {"text": "glass card flying past the camera, smooth airy whoosh passing left to right", "duration": 0.8},
+    "whoosh": {"text": "smooth clean cinematic whoosh", "duration": 0.7},
+    "whip": {"text": "very fast whip pan swish transition", "duration": 0.5},
+    "send": {"text": "message sent swoosh, short and clean", "duration": 0.5},
+    "ding": {"text": "pleasant two-note notification chime", "duration": 0.9},
+    "crash": {"text": "soft airy cymbal swell crash, bright and clean", "duration": 1.8},
+    "hit": {"text": "punchy cinematic drum hit with big reverb snare", "duration": 0.8},
+    "pop": {"text": "soft bubbly UI pop", "duration": 0.5},
+    "tick": {"text": "tiny digital counter tick", "duration": 0.5}
+  }
+}

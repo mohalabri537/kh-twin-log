@@ -1,0 +1,499 @@
+{
+ "hero": {
+  "n": 48,
+  "start": 0,
+  "end": 1519
+ },
+ "eegscene": {
+  "n": 40,
+  "start": 3738,
+  "end": 4920
+ },
+ "doctors": {
+  "h": 6823
+ },
+ "eeg": {
+  "h": 5410
+ },
+ "visit": {
+  "h": 4458
+ },
+ "book": [
+  {
+   "name": "start",
+   "file": "book-start.jpg",
+   "h": 2723,
+   "tap": {
+    "x": 195,
+    "y": 564.5546875,
+    "w": 355.6875,
+    "h": 96.328125
+   }
+  },
+  {
+   "name": "svc",
+   "file": "book-svc.jpg",
+   "h": 2926,
+   "tap": {
+    "x": 195,
+    "y": 979.8359375,
+    "w": 355.6875,
+    "h": 96.328125
+   }
+  },
+  {
+   "name": "doc",
+   "file": "book-doc.jpg",
+   "h": 3243,
+   "tap": {
+    "x": 316.8984375,
+    "y": 1177.0390625,
+    "w": 111.890625,
+    "h": 85.484375
+   }
+  },
+  {
+   "name": "date",
+   "file": "book-date.jpg",
+   "h": 4373,
+   "tap": {
+    "x": 195,
+    "y": 1499.7265625,
+    "w": 355.6875,
+    "h": 96.328125
+   }
+  },
+  {
+   "name": "time",
+   "file": "book-time.jpg",
+   "h": 4373,
+   "tap": {
+    "x": 298.0234375,
+    "y": 2348.296875,
+    "w": 149.640625,
+    "h": 51.75
+   }
+  }
+ ],
+ "deskCards": [
+  {
+   "x": 1197,
+   "y": 728.6875,
+   "w": 286,
+   "h": 402.828125,
+   "href": "../ar/articles/seizure-first-aid.html"
+  },
+  {
+   "x": 879,
+   "y": 728.6875,
+   "w": 286,
+   "h": 402.828125,
+   "href": "../ar/articles/what-is-an-eeg.html"
+  },
+  {
+   "x": 561,
+   "y": 728.6875,
+   "w": 286,
+   "h": 402.828125,
+   "href": "../ar/articles/what-is-epilepsy.html"
+  },
+  {
+   "x": 243,
+   "y": 728.6875,
+   "w": 286,
+   "h": 402.828125,
+   "href": "../ar/articles/headaches-in-ramadan.html"
+  }
+ ],
+ "home": {
+  "offset": 2363,
+  "h": 5200,
+  "sections": [
+   {
+    "cls": "hero",
+    "scene": "hero",
+    "top": 0,
+    "h": 2363,
+    "title": "رعاية متخصصة للدماغ والأعصاب والعمود الفقري"
+   },
+   {
+    "cls": "sec",
+    "scene": "",
+    "top": 2363,
+    "h": 438,
+    "title": ""
+   },
+   {
+    "cls": "sec",
+    "scene": "",
+    "top": 2801,
+    "h": 937,
+    "title": "أطباؤنا"
+   },
+   {
+    "cls": "eeg-scene",
+    "scene": "eeg",
+    "top": 3738,
+    "h": 2026,
+    "title": "تخطيط كهربائية الدماغ في العيادة"
+   },
+   {
+    "cls": "sec",
+    "scene": "",
+    "top": 5763,
+    "h": 920,
+    "title": "العيادة"
+   },
+   {
+    "cls": "sec alt",
+    "scene": "",
+    "top": 6683,
+    "h": 1251,
+    "title": "آراء المراجعين"
+   },
+   {
+    "cls": "sec",
+    "scene": "",
+    "top": 7934,
+    "h": 698,
+    "title": "مقالات"
+   },
+   {
+    "cls": "sec alt",
+    "scene": "",
+    "top": 8633,
+    "h": 722,
+    "title": "ألعاب الدماغ"
+   },
+   {
+    "cls": "sec reels-sec",
+    "scene": "",
+    "top": 9355,
+    "h": 730,
+    "title": "على إنستغرام"
+   },
+   {
+    "cls": "visit",
+    "scene": "visit",
+    "top": 10085,
+    "h": 1857,
+    "title": "احجز زيارتك"
+   }
+  ]
+ },
+ "services": {
+  "h": 3990
+ },
+ "topAr": {
+  "lang": {
+   "x": 119.890625,
+   "y": 30
+  },
+  "theme": {
+   "x": 182.734375,
+   "y": 30
+  }
+ },
+ "topEn": {
+  "lang": {
+   "x": 278.8203125,
+   "y": 30
+  },
+  "theme": {
+   "x": 224,
+   "y": 30
+  }
+ },
+ "topDark": {
+  "lang": {
+   "x": 119.890625,
+   "y": 30
+  },
+  "theme": {
+   "x": 182.734375,
+   "y": 30
+  }
+ },
+ "topEnDark": {
+  "lang": {
+   "x": 278.8203125,
+   "y": 30
+  },
+  "theme": {
+   "x": 224,
+   "y": 30
+  }
+ },
+ "homeDocs": {
+  "h": 936.890625,
+  "cardsTop": 164.375,
+  "cardsBottom": 852.890625,
+  "cards": 3
+ },
+ "games": {
+  "stroop": {
+   "intro": "games/stroop-intro.jpg",
+   "start": {
+    "x": 195,
+    "y": 529.890625,
+    "w": 150,
+    "h": 48
+   },
+   "words": [
+    {
+     "file": "games/stroop-0.jpg",
+     "ink": "blue",
+     "text": "أحمر",
+     "tap": {
+      "x": 112.078125,
+      "y": 465.890625,
+      "w": 157.84375,
+      "h": 56
+     },
+     "word": {
+      "x": 195.0078125,
+      "y": 282.8828125,
+      "w": 87.703125,
+      "h": 62.390625
+     }
+    },
+    {
+     "file": "games/stroop-1.jpg",
+     "ink": "green",
+     "text": "أزرق",
+     "tap": {
+      "x": 277.921875,
+      "y": 529.890625,
+      "w": 157.84375,
+      "h": 56
+     },
+     "word": {
+      "x": 195,
+      "y": 282.8828125,
+      "w": 77.90625,
+      "h": 62.390625
+     }
+    },
+    {
+     "file": "games/stroop-2.jpg",
+     "ink": "green",
+     "text": "أخضر",
+     "tap": {
+      "x": 277.921875,
+      "y": 529.890625,
+      "w": 157.84375,
+      "h": 56
+     },
+     "word": {
+      "x": 195.0078125,
+      "y": 282.8828125,
+      "w": 99.515625,
+      "h": 62.390625
+     }
+    },
+    {
+     "file": "games/stroop-3.jpg",
+     "ink": "blue",
+     "text": "بنفسجي",
+     "tap": {
+      "x": 112.078125,
+      "y": 465.890625,
+      "w": 157.84375,
+      "h": 56
+     },
+     "word": {
+      "x": 195,
+      "y": 282.8828125,
+      "w": 158.40625,
+      "h": 62.390625
+     }
+    }
+   ],
+   "result": "games/stroop-result.jpg"
+  },
+  "reaction": {
+   "intro": "games/reaction-intro.jpg",
+   "start": {
+    "x": 195,
+    "y": 529.890625,
+    "w": 150,
+    "h": 48
+   },
+   "wait": "games/reaction-wait.jpg",
+   "go": "games/reaction-go.jpg",
+   "target": {
+    "x": 195,
+    "y": 307.09375,
+    "w": 96,
+    "h": 96
+   },
+   "time": "games/reaction-time.jpg",
+   "result": "games/reaction-result.jpg"
+  },
+  "memory": {
+   "intro": "games/memory-intro.jpg",
+   "start": {
+    "x": 195,
+    "y": 529.890625,
+    "w": 150,
+    "h": 48
+   },
+   "show": "games/memory-show.jpg",
+   "seq": [
+    "2",
+    "4",
+    "8",
+    "5"
+   ],
+   "input": "games/memory-input.jpg",
+   "tiles": [
+    {
+     "k": "0",
+     "x": 298.3359375,
+     "y": 221.5546875
+    },
+    {
+     "k": "1",
+     "x": 195.0078125,
+     "y": 221.5546875
+    },
+    {
+     "k": "2",
+     "x": 91.671875,
+     "y": 221.5546875
+    },
+    {
+     "k": "3",
+     "x": 298.3359375,
+     "y": 324.8828125
+    },
+    {
+     "k": "4",
+     "x": 195.0078125,
+     "y": 324.8828125
+    },
+    {
+     "k": "5",
+     "x": 91.671875,
+     "y": 324.8828125
+    },
+    {
+     "k": "6",
+     "x": 298.3359375,
+     "y": 428.21875
+    },
+    {
+     "k": "7",
+     "x": 195.0078125,
+     "y": 428.21875
+    },
+    {
+     "k": "8",
+     "x": 91.671875,
+     "y": 428.21875
+    }
+   ]
+  }
+ },
+ "cond": {
+  "gamesHub": {
+   "h": 3634
+  },
+  "hub": {
+   "h": 3614,
+   "urgent": {
+    "x": 195,
+    "y": 386.7734375,
+    "top": 286.953125,
+    "w": 355.6875,
+    "h": 199.640625
+   },
+   "cards": [
+    {
+     "href": "conditions/headache-and-migraine.html",
+     "x": 195,
+     "y": 639.109375,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/numbness-and-tingling.html",
+     "x": 195,
+     "y": 775.046875,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/memory-loss-and-dementia.html",
+     "x": 195,
+     "y": 910.984375,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/muscle-weakness.html",
+     "x": 195,
+     "y": 1046.921875,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/tremor-and-shaking.html",
+     "x": 195,
+     "y": 1182.859375,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/seizures-and-epilepsy.html",
+     "x": 195,
+     "y": 1397.34375,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/stroke-warning-signs.html",
+     "x": 195,
+     "y": 1533.28125,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/multiple-sclerosis.html",
+     "x": 195,
+     "y": 1669.21875,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/febrile-seizures.html",
+     "x": 195,
+     "y": 1883.703125,
+     "h": 123.9375
+    },
+    {
+     "href": "conditions/developmental-delay.html",
+     "x": 195,
+     "y": 2019.640625,
+     "h": 123.9375
+    }
+   ]
+  },
+  "stroke": {
+   "h": 6856,
+   "urgent": {
+    "x": 195,
+    "y": 881.796875,
+    "top": 648.6875,
+    "w": 355.6875,
+    "h": 466.21875
+   },
+   "soon": {
+    "x": 195,
+    "y": 1281.9140625,
+    "top": 1128.90625,
+    "w": 355.6875,
+    "h": 306.015625
+   },
+   "care": {
+    "x": 195,
+    "y": 4178.3046875,
+    "top": 3899.140625,
+    "w": 355.6875,
+    "h": 558.328125
+   }
+  }
+ }
+}
