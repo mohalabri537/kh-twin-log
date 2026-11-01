@@ -8,6 +8,7 @@ import {AR, EN} from '../theme';
 // Arabic type cut to a Saudi voice-over, a score that lifts as the mark lands and hits as it returns, and the real site
 // playing on flat phones. Every cue below is a frame where a word is spoken (voice take B: video frame = 30 t - 17).
 // Audio: public/audio/story/mix.mp3, built by audio/story_mix.sh.
+// Everything that matters stays inside the Reels safe area: y 260–1440, x 60–960.
 export const STORY_FRAMES = 840;
 export const INK = '#1D1D1F', VIO = '#7431F4', GREY = '#6E6E73';
 
@@ -109,7 +110,7 @@ const Hook: React.FC<{f: number}> = ({f}) => (
       <Row y={780}><Slam f={f} at={9} leave={42} size={120}>كل</Slam><Slam f={f} at={13} leave={42} size={120}>يوم،</Slam></Row>
       <Row y={940}><Slam f={f} at={19} leave={42} size={120}>سؤال</Slam><Slam f={f} at={27} leave={42} size={120} color={VIO}>جديد</Slam></Row>
       <Chip f={f} at={20} n="cloud" x={220} y={690} rot={-12} leave={42} />
-      <Chip f={f} at={28} n="bolt" x={860} y={1170} size={84} rot={10} leave={42} />
+      <Chip f={f} at={28} n="bolt" x={840} y={1170} size={84} rot={10} leave={42} />
     </>
   )
 );
@@ -155,7 +156,7 @@ const Ring: React.FC<{f: number}> = ({f}) => {
         const k = spr(f, 116 + i * 2, fps, {damping: 14, stiffness: 140, mass: 0.7});
         const a = (i / RING.length) * Math.PI * 2 + (f - 116) / 40 - Math.PI / 2;
         const r = 340 * k * (1 + burst * 1.6);
-        const x = 540 + Math.cos(a) * r * 1.05, y = 900 + Math.sin(a) * r * 1.4;
+        const x = 540 + Math.cos(a) * r * 0.92, y = 900 + Math.sin(a) * r * 1.25;
         const doc = src.startsWith('img/');
         const w = doc ? 190 : 210, h = doc ? 190 : 250;
         return (
@@ -210,7 +211,7 @@ const Brand: React.FC<{f: number}> = ({f}) => {
       {f >= 245 && <div style={{position: 'absolute', left: 540, top: 860 - up * 120, transform: `translate(-50%,-50%) scale(${grow * (1 - up * 0.3)})`}}><Mark size={360} /></div>}
       <div style={{position: 'absolute', top: 1040 - up * 190, width: '100%'}}>
         <Row y={0}>
-          <Slam f={f} at={198} size={84}>عيادة</Slam><Slam f={f} at={213} size={84}>طبّ</Slam><Slam f={f} at={222} size={84}>وعلوم</Slam><Slam f={f} at={235} size={84} color={VIO}>الأعصاب</Slam>
+          <Slam f={f} at={198} size={74}>عيادة</Slam><Slam f={f} at={213} size={74}>طبّ</Slam><Slam f={f} at={222} size={74}>وعلوم</Slam><Slam f={f} at={235} size={74} color={VIO}>الأعصاب</Slam>
         </Row>
       </div>
       {f >= 255 && (
@@ -230,9 +231,9 @@ const Brand: React.FC<{f: number}> = ({f}) => {
 // ---------------------------------------------------------------- 9.7–21 s three uses on a flat phone, each one cut in on its spoken title
 type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]};
 const USES: Use[] = [
-  {from: 290, to: 440, rec: 'phone-guide.mp4', head: [['دليل', 295], ['واضح', 304], ['للأعراض', 312, VIO]], sub: [['ومتى', 344], ['تتصل', 357], ['بالرقم', 370]], chips: [['heart', 180, 1000, 300], ['wave', 900, 1250, 318], ['head', 170, 1440, 330]]},
-  {from: 438, to: 536, rec: 'phone-doctors.mp4', head: [['أطباؤنا', 443, VIO]], sub: [['استشاريون', 471], ['للكبار', 493], ['والأطفال', 511, VIO]], chips: [['star', 900, 980, 452]]},
-  {from: 533, to: 640, rec: 'phone-book.mp4', head: [['واحجز', 538], ['موعدك', 556, VIO]], sub: [['بخطوات', 571], ['بسيطة', 586]], chips: [['cal', 180, 1000, 548], ['check', 190, 1480, 590]]},
+  {from: 290, to: 440, rec: 'phone-guide.mp4', head: [['دليل', 295], ['واضح', 304], ['للأعراض', 312, VIO]], sub: [['ومتى', 344], ['تتصل', 357], ['بالرقم', 370]], chips: [['heart', 200, 1000, 300], ['wave', 860, 1150, 318], ['head', 200, 1260, 330]]},
+  {from: 438, to: 536, rec: 'phone-doctors.mp4', head: [['أطباؤنا', 443, VIO]], sub: [['استشاريون', 471], ['للكبار', 493], ['والأطفال', 511, VIO]], chips: [['star', 860, 900, 452]]},
+  {from: 533, to: 640, rec: 'phone-book.mp4', head: [['واحجز', 538], ['موعدك', 556, VIO]], sub: [['بخطوات', 571], ['بسيطة', 586]], chips: [['cal', 200, 960, 548], ['check', 200, 1260, 590]]},
 ];
 const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
   const {fps} = useVideoConfig();
@@ -242,11 +243,14 @@ const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
   const leave = io(p(f, u.to - 8, 9)); // whips up and out as the next scene comes up underneath
   return (
     <AbsoluteFill style={{transform: `translateY(${-leave * 1500}px)`, filter: leave > 0.02 ? `blur(${leave * 14}px)` : undefined}}>
-      <Row y={190}>{u.head.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={104} color={c ?? INK}>{w}</Slam>)}</Row>
-      <Row y={350}>{u.sub.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={52} weight={500} color={c ?? GREY}>{w}</Slam>)}</Row>
+      {/* the title with the spoken line flowing under it, inside the Reels safe area */}
+      <div dir="rtl" style={{position: 'absolute', top: 262, left: 90, right: 90, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center'}}>{u.head.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={92} color={c ?? INK}>{w}</Slam>)}</div>
+        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', marginTop: -16}}>{u.sub.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={48} weight={500} color={c ?? GREY}>{w}</Slam>)}</div>
+      </div>
       <Sequence from={u.from} durationInFrames={u.to - u.from + 4} layout="none">
         <AbsoluteFill style={{transform: `translateY(${(1 - rise) * 1300}px) rotate(${(1 - rise) * 5}deg)`}}>
-          <Phone src={u.rec} k={1.08} cx={540} top={540} lift={10} />
+          <Phone src={u.rec} k={0.9} cx={540} top={548} lift={10} />
         </AbsoluteFill>
       </Sequence>
       {u.chips.map(([n, x, y, at], i) => <Chip key={i} f={f} at={at} n={n} x={x} y={y} rot={i % 2 ? 10 : -10} />)}
@@ -265,7 +269,7 @@ const Counter: React.FC<{f: number}> = ({f}) => {
   const first = spring({frame: f - 387, fps, config: {damping: 12, stiffness: 220, mass: 0.6}});
   const leave = io(p(f, 432, 9));
   return (
-    <div style={{position: 'absolute', right: 70, top: 760 - leave * 1500, transform: `rotate(${6 - first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '100% 50%'}}>
+    <div style={{position: 'absolute', right: 140, top: 760 - leave * 1500, transform: `rotate(${6 - first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '100% 50%'}}>
       <div style={{padding: '22px 40px', borderRadius: 999, background: '#D70015', color: '#fff', fontFamily: EN, fontWeight: 800, fontSize: 92, letterSpacing: 2, boxShadow: '0 22px 40px -14px rgba(215,0,21,.55)', display: 'flex', alignItems: 'center', gap: 18}}>
         <Ico n="phone" size={70} color="#fff" />{'9'.repeat(n)}
       </div>
@@ -274,7 +278,7 @@ const Counter: React.FC<{f: number}> = ({f}) => {
 };
 
 // the doctors pop in round the phone, one per spoken word of «استشاريون للكبار والأطفال»
-const DOCS: [string, number, number, number][] = [['img/haifa-cut.webp', 471, 170, 1060], ['img/said-cut.webp', 493, 910, 1260], ['img/wafaa-cut.webp', 511, 175, 1500]];
+const DOCS: [string, number, number, number][] = [['img/haifa-cut.webp', 471, 200, 900], ['img/said-cut.webp', 493, 830, 1080], ['img/wafaa-cut.webp', 511, 200, 1240]];
 const Doctors: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
   if (f < 471 || f > 538) return null;
@@ -286,7 +290,7 @@ const Doctors: React.FC<{f: number}> = ({f}) => {
         const k = spring({frame: f - at, fps, config: {damping: 11, stiffness: 220, mass: 0.6}});
         const bob = Math.sin((f - at) / 12) * 8;
         return (
-          <div key={i} style={{position: 'absolute', left: x - 115, top: y - 115 + bob - leave * 1500, width: 230, height: 230, borderRadius: '50%', overflow: 'hidden', background: 'radial-gradient(circle at 50% 40%, #EADFFF, #B79BFF)', border: '8px solid #fff', boxShadow: '0 24px 44px -18px rgba(90,40,200,.5)', transform: `scale(${k}) rotate(${(1 - k) * (i % 2 ? 20 : -20)}deg)`}}>
+          <div key={i} style={{position: 'absolute', left: x - 100, top: y - 100 + bob - leave * 1500, width: 200, height: 200, borderRadius: '50%', overflow: 'hidden', background: 'radial-gradient(circle at 50% 40%, #EADFFF, #B79BFF)', border: '8px solid #fff', boxShadow: '0 24px 44px -18px rgba(90,40,200,.5)', transform: `scale(${k}) rotate(${(1 - k) * (i % 2 ? 20 : -20)}deg)`}}>
             <Img src={staticFile(src)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 12%'}} />
           </div>
         );
@@ -307,9 +311,9 @@ const Whats: React.FC<{f: number}> = ({f}) => {
   );
   return (
     <>
-      <Row y={470}><Slam f={f} at={606} size={52} weight={600} color="#1DA851" leave={632}>عبر واتساب</Slam></Row>
-      {pill('واتساب', a, 640, 900, 14)}
-      {f >= 618 && pill('تم ✓', b, 90, 1250, -12)}
+      <Row y={1350}><Slam f={f} at={606} size={52} weight={600} color="#1DA851" leave={632}>عبر واتساب</Slam></Row>
+      {pill('واتساب', a, 600, 880, 14)}
+      {f >= 618 && pill('تم ✓', b, 90, 1180, -12)}
     </>
   );
 };
@@ -321,8 +325,8 @@ const Guide: React.FC<{f: number}> = ({f}) => (
       <Row y={790}><Slam f={f} at={639} leave={734} size={110}>مهما</Slam><Slam f={f} at={649} leave={734} size={110}>كان</Slam><Slam f={f} at={657} leave={734} size={110} color={VIO}>سؤالك</Slam></Row>
       <Row y={950}><Slam f={f} at={683} leave={734} size={110}>نحن</Slam><Slam f={f} at={694} leave={734} size={110}>هنا</Slam><Slam f={f} at={704} leave={734} size={110} color={VIO}>لنرشدك</Slam></Row>
       <Chip f={f} at={660} n="heart" x={190} y={700} size={110} rot={-10} leave={734} />
-      <Chip f={f} at={706} n="check" x={890} y={1180} size={110} rot={10} leave={734} />
-      <Chip f={f} at={690} n="star" x={880} y={680} size={80} rot={8} leave={734} />
+      <Chip f={f} at={706} n="check" x={850} y={1260} size={100} rot={10} leave={734} />
+      <Chip f={f} at={690} n="star" x={850} y={640} size={80} rot={8} leave={734} />
     </>
   )
 );

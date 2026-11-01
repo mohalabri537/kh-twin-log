@@ -8,6 +8,8 @@ import {Chip, clamp, GREY, Ico, INK, io, Mark, out, p, Page, RING, Row, Slam as 
 // voice-over, the English site on the phones, two more stops (a condition page and the brain games) and word-by-word
 // captions along the bottom. Every cue is a frame where a word is spoken (English take B: video frame = 30 t + 6).
 // Audio: public/audio/story/mix-en.mp3, built by `audio/story_mix.sh en`.
+// Everything that matters stays inside the Reels safe area: y 260–1440, x 60–960 (the app's header, caption and
+// buttons cover the rest).
 export const STORY_EN_FRAMES = 1140;
 
 const Slam: React.FC<React.ComponentProps<typeof SlamAR>> = (props) => <SlamAR font={EN} {...props} />;
@@ -46,13 +48,13 @@ const Captions: React.FC<{f: number}> = ({f}) => {
   const nines = c.w[0][0] === '9';
   const k = out(p(f, c.from, 5)) * (1 - io(p(f, c.to - 3, 4)));
   return (
-    <div style={{position: 'absolute', left: 0, right: 0, top: 1650, display: 'flex', justifyContent: 'center', opacity: k, transform: `translateY(${(1 - k) * 16}px)`}}>
+    <div style={{position: 'absolute', left: 0, right: 0, top: 1352, display: 'flex', justifyContent: 'center', opacity: k, transform: `translateY(${(1 - k) * 16}px)`}}>
       <div style={{maxWidth: 940, padding: '18px 34px', borderRadius: 30, background: 'rgba(255,255,255,.82)', boxShadow: '0 16px 36px -18px rgba(60,20,140,.45), inset 0 0 0 1.5px rgba(124,80,255,.14)', backdropFilter: 'blur(10px)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: nines ? 6 : 14}}>
         {c.w.map(([w, at], i) => {
           const next = c.w[i + 1]?.[1] ?? c.to;
           const on = f >= at, now = on && f < next;
           const pop = now ? 1 + 0.08 * Math.exp(-(f - at) / 3) : 1;
-          return <span key={i} style={{fontFamily: EN, fontWeight: 700, fontSize: 50, lineHeight: 1.2, color: now ? VIO : INK, opacity: on ? 1 : 0.28, display: 'inline-block', transform: `scale(${pop})`}}>{w}</span>;
+          return <span key={i} style={{fontFamily: EN, fontWeight: 700, fontSize: 46, lineHeight: 1.2, color: now ? VIO : INK, opacity: on ? 1 : 0.28, display: 'inline-block', transform: `scale(${pop})`}}>{w}</span>;
         })}
       </div>
     </div>
@@ -76,7 +78,7 @@ const Hook: React.FC<{f: number}> = ({f}) => (f > 78 ? null : (
     <Line y={780}><Slam f={f} at={6} leave={72} size={124}>Every</Slam><Slam f={f} at={14} leave={72} size={124}>day,</Slam></Line>
     <Line y={940}><Slam f={f} at={35} leave={72} size={124}>a new</Slam><Slam f={f} at={47} leave={72} size={124} color={VIO}>question.</Slam></Line>
     <Chip f={f} at={36} n="cloud" x={190} y={690} rot={-12} leave={72} />
-    <Chip f={f} at={48} n="bolt" x={880} y={1190} size={84} rot={10} leave={72} />
+    <Chip f={f} at={48} n="bolt" x={840} y={1190} size={84} rot={10} leave={72} />
   </>
 ));
 
@@ -91,7 +93,7 @@ const Symptoms: React.FC<{f: number}> = ({f}) => {
         const k = spring({frame: f - at, fps, config: {damping: 13, stiffness: 240, mass: 0.6}});
         const l = io(p(f, end - 2, 7));
         const dir = i % 2 ? 1 : -1;
-        const size = Math.min(190, 1500 / word.length * 1.45);
+        const size = Math.min(160, 860 / (word.length * 0.64)); // fits inside the 960 px safe width
         return (
           <AbsoluteFill key={i} style={{transform: `translateX(${l * dir * -900}px)`, opacity: 1 - l * 0.6}}>
             <div style={{position: 'absolute', left: 240, top: 600, width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,80,255,.22), rgba(124,80,255,0) 68%)', transform: `scale(${0.4 + 0.6 * k})`}} />
@@ -120,7 +122,7 @@ const Ring: React.FC<{f: number}> = ({f}) => {
         const k = spr(f, 170 + i * 2, fps, {damping: 14, stiffness: 140, mass: 0.7});
         const a = (i / RING.length) * Math.PI * 2 + (f - 170) / 40 - Math.PI / 2;
         const r = 340 * k * (1 + burst * 1.6);
-        const x = 540 + Math.cos(a) * r * 1.05, y = 900 + Math.sin(a) * r * 1.4;
+        const x = 540 + Math.cos(a) * r * 0.92, y = 900 + Math.sin(a) * r * 1.25;
         const doc = src.startsWith('img/');
         const w = doc ? 190 : 210, h = doc ? 190 : 250;
         return (
@@ -191,11 +193,11 @@ const Brand: React.FC<{f: number}> = ({f}) => {
 // ---------------------------------------------------------------- 12.4–30.8 s five stops on a flat phone, each cut in on its spoken title
 type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]};
 const USES: Use[] = [
-  {from: 372, to: 500, rec: 'phone-guide-en.mp4', head: [['A clear', 378], ['symptom guide', 386, VIO]], sub: [['and when', 422], ['to call', 431]], chips: [['heart', 180, 1000, 392], ['wave', 900, 1250, 404], ['head', 170, 1440, 414]]},
-  {from: 496, to: 598, rec: 'phone-condition-en.mp4', head: [['Conditions', 503], ['explained', 516, VIO]], sub: [['in plain', 541], ['language', 568, VIO]], chips: [['head', 900, 1000, 520], ['check', 175, 1300, 570]]},
-  {from: 594, to: 694, rec: 'phone-games-en.mp4', head: [['Brain', 600], ['games', 605, VIO]], sub: [['to test your', 617], ['memory', 646], ['and', 656], ['focus', 665, VIO]], chips: [['bolt', 180, 1000, 632]]},
-  {from: 690, to: 807, rec: 'phone-doctors-en.mp4', head: [['Meet our', 696], ['doctors', 707, VIO]], sub: [['Consultants for', 734], ['adults', 759], ['and children', 771, VIO]], chips: [['star', 900, 980, 712]]},
-  {from: 803, to: 928, rec: 'phone-book-en.mp4', head: [['Book your', 817], ['appointment', 831, VIO]], sub: [['in a few', 843], ['simple', 865], ['steps', 877]], chips: [['cal', 180, 1000, 838], ['check', 190, 1480, 880]]},
+  {from: 372, to: 500, rec: 'phone-guide-en.mp4', head: [['A clear', 378], ['symptom guide', 386, VIO]], sub: [['and when', 422], ['to call', 431]], chips: [['heart', 200, 1000, 392], ['wave', 860, 1150, 404], ['head', 200, 1260, 414]]},
+  {from: 496, to: 598, rec: 'phone-condition-en.mp4', head: [['Conditions', 503], ['explained', 516, VIO]], sub: [['in plain', 541], ['language', 568, VIO]], chips: [['head', 860, 960, 520], ['check', 200, 1240, 570]]},
+  {from: 594, to: 694, rec: 'phone-games-en.mp4', head: [['Brain', 600], ['games', 605, VIO]], sub: [['to test your', 617], ['memory', 646], ['and', 656], ['focus', 665, VIO]], chips: [['bolt', 200, 960, 632]]},
+  {from: 690, to: 807, rec: 'phone-doctors-en.mp4', head: [['Meet our', 696], ['doctors', 707, VIO]], sub: [['Consultants for', 734], ['adults', 759], ['and children', 771, VIO]], chips: [['star', 860, 900, 712]]},
+  {from: 803, to: 928, rec: 'phone-book-en.mp4', head: [['Book your', 817], ['appointment', 831, VIO]], sub: [['in a few', 843], ['simple', 865], ['steps', 877]], chips: [['cal', 200, 960, 838], ['check', 200, 1260, 880]]},
 ];
 const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
   const {fps} = useVideoConfig();
@@ -205,13 +207,13 @@ const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
   return (
     <AbsoluteFill style={{transform: `translateY(${-leave * 1500}px)`, filter: leave > 0.02 ? `blur(${leave * 14}px)` : undefined}}>
       {/* the title (one or two lines) with the spoken line flowing under it */}
-      <div style={{position: 'absolute', top: 120, left: 50, right: 50, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', lineHeight: 1}}>{u.head.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={88} weight={800} color={c ?? INK}>{w}</Slam>)}</div>
-        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', marginTop: -4}}>{u.sub.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={48} weight={600} color={c ?? GREY}>{w}</Slam>)}</div>
+      <div style={{position: 'absolute', top: 268, left: 90, right: 90, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', lineHeight: 1}}>{u.head.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={70} weight={800} color={c ?? INK}>{w}</Slam>)}</div>
+        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', marginTop: -4}}>{u.sub.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={44} weight={600} color={c ?? GREY}>{w}</Slam>)}</div>
       </div>
       <Sequence from={u.from} durationInFrames={u.to - u.from + 4} layout="none">
         <AbsoluteFill style={{transform: `translateY(${(1 - rise) * 1300}px) rotate(${(1 - rise) * 5}deg)`}}>
-          <Phone src={u.rec} k={1.08} cx={540} top={500} lift={10} />
+          <Phone src={u.rec} k={0.9} cx={540} top={548} lift={10} />
         </AbsoluteFill>
       </Sequence>
       {u.chips.map(([n, x, y, at], i) => <Chip key={i} f={f} at={at} n={n} x={x} y={y} rot={i % 2 ? 10 : -10} />)}
@@ -229,7 +231,7 @@ const Counter: React.FC<{f: number}> = ({f}) => {
   const first = spring({frame: f - 448, fps, config: {damping: 12, stiffness: 220, mass: 0.6}});
   const leave = io(p(f, 492, 9));
   return (
-    <div style={{position: 'absolute', left: 70, top: 740 - leave * 1500, transform: `rotate(${-6 + first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '0 50%'}}>
+    <div style={{position: 'absolute', left: 70, top: 760 - leave * 1500, transform: `rotate(${-6 + first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '0 50%'}}>
       <div style={{padding: '22px 40px', borderRadius: 999, background: '#D70015', color: '#fff', fontFamily: EN, fontWeight: 800, fontSize: 92, letterSpacing: 2, boxShadow: '0 22px 40px -14px rgba(215,0,21,.55)', display: 'flex', alignItems: 'center', gap: 18}}>
         <Ico n="phone" size={70} color="#fff" />{'9'.repeat(n)}
       </div>
@@ -238,7 +240,7 @@ const Counter: React.FC<{f: number}> = ({f}) => {
 };
 
 // the three games pop round the phone on "memory and focus"
-const GAMES: [string, string, number, number, number][] = [['Memory', 'head', 646, 640, 900], ['Reaction', 'bolt', 656, 90, 1240], ['Focus', 'star', 665, 650, 1420]];
+const GAMES: [string, string, number, number, number][] = [['Memory', 'head', 646, 620, 860], ['Reaction', 'bolt', 656, 80, 1060], ['Focus', 'star', 665, 640, 1230]];
 const Games: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
   if (f < 646 || f > 694) return null;
@@ -259,7 +261,7 @@ const Games: React.FC<{f: number}> = ({f}) => {
 };
 
 // the doctors pop in, one on each of "consultants", "adults", "children"
-const DOCS: [string, number, number, number][] = [['img/haifa-cut.webp', 734, 170, 1040], ['img/said-cut.webp', 759, 910, 1240], ['img/wafaa-cut.webp', 783, 175, 1460]];
+const DOCS: [string, number, number, number][] = [['img/haifa-cut.webp', 734, 200, 900], ['img/said-cut.webp', 759, 830, 1080], ['img/wafaa-cut.webp', 783, 200, 1240]];
 const Doctors: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
   if (f < 734 || f > 808) return null;
@@ -271,7 +273,7 @@ const Doctors: React.FC<{f: number}> = ({f}) => {
         const k = spring({frame: f - at, fps, config: {damping: 11, stiffness: 220, mass: 0.6}});
         const bob = Math.sin((f - at) / 12) * 8;
         return (
-          <div key={i} style={{position: 'absolute', left: x - 115, top: y - 115 + bob - leave * 1500, width: 230, height: 230, borderRadius: '50%', overflow: 'hidden', background: 'radial-gradient(circle at 50% 40%, #EADFFF, #B79BFF)', border: '8px solid #fff', boxShadow: '0 24px 44px -18px rgba(90,40,200,.5)', transform: `scale(${k}) rotate(${(1 - k) * (i % 2 ? 20 : -20)}deg)`}}>
+          <div key={i} style={{position: 'absolute', left: x - 100, top: y - 100 + bob - leave * 1500, width: 200, height: 200, borderRadius: '50%', overflow: 'hidden', background: 'radial-gradient(circle at 50% 40%, #EADFFF, #B79BFF)', border: '8px solid #fff', boxShadow: '0 24px 44px -18px rgba(90,40,200,.5)', transform: `scale(${k}) rotate(${(1 - k) * (i % 2 ? 20 : -20)}deg)`}}>
             <Img src={staticFile(src)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 12%'}} />
           </div>
         );
@@ -292,9 +294,8 @@ const Whats: React.FC<{f: number}> = ({f}) => {
   );
   return (
     <>
-      <Line y={450}><Slam f={f} at={902} size={50} weight={700} color="#1DA851" leave={920}>on WhatsApp</Slam></Line>
-      {pill('WhatsApp', a, 600, 880, 14)}
-      {f >= 912 && pill('Done ✓', b, 90, 1240, -12)}
+      {pill('WhatsApp', a, 560, 880, 14)}
+      {f >= 912 && pill('Done ✓', b, 90, 1180, -12)}
     </>
   );
 };
@@ -304,9 +305,9 @@ const Guide: React.FC<{f: number}> = ({f}) => (f < 925 || f > 1018 ? null : (
   <>
     <Line y={760}><Slam f={f} at={930} leave={1010} size={104} weight={800}>Whatever</Slam><Slam f={f} at={937} leave={1010} size={104} weight={800}>your</Slam><Slam f={f} at={945} leave={1010} size={104} weight={800} color={VIO}>question,</Slam></Line>
     <Line y={1020}><Slam f={f} at={971} leave={1010} size={104} weight={800}>we're here</Slam><Slam f={f} at={983} leave={1010} size={104} weight={800}>to</Slam><Slam f={f} at={990} leave={1010} size={104} weight={800} color={VIO}>guide you.</Slam></Line>
-    <Chip f={f} at={946} n="heart" x={170} y={660} size={110} rot={-10} leave={1010} />
-    <Chip f={f} at={992} n="check" x={900} y={1340} size={110} rot={10} leave={1010} />
-    <Chip f={f} at={975} n="star" x={900} y={650} size={80} rot={8} leave={1010} />
+    <Chip f={f} at={946} n="heart" x={190} y={620} size={100} rot={-10} leave={1010} />
+    <Chip f={f} at={992} n="check" x={850} y={1260} size={100} rot={10} leave={1010} />
+    <Chip f={f} at={975} n="star" x={850} y={620} size={80} rot={8} leave={1010} />
   </>
 ));
 
