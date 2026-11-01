@@ -19,26 +19,121 @@ export const out = (t: number) => 1 - Math.pow(1 - clamp(t), 4);
 export const p = (f: number, a: number, d: number) => clamp((f - a) / d);
 export const spr = (f: number, at: number, fps: number, c = {damping: 12, stiffness: 160, mass: 0.7}) => spring({frame: f - at, fps, config: c});
 
-// ---------------------------------------------------------------- page: white, with a grainy gradient blob
-// A few soft colour fields (pink-lilac, violet, blue-violet) are blurred together, then every pixel is pushed about by
-// fine noise (feDisplacementMap), so the colour breaks into grain at its edges like a risograph print; a speckle of the
-// same noise sits over the colour. The blob breathes, drifts, and glides to a new place behind each scene.
-export type BlobKey = [number, number, number, number]; // frame, centre x, centre y, scale
-const smooth = (t: number) => t * t * (3 - 2 * t);
-const blobAt = (keys: BlobKey[], f: number) => {
-  if (f <= keys[0][0]) return keys[0].slice(1);
-  for (let i = 0; i < keys.length - 1; i++) {
-    const [f0, ...a] = keys[i], [f1, ...b] = keys[i + 1];
-    if (f <= f1) { const t = smooth((f - f0) / Math.max(1, f1 - f0)); return a.map((v, j) => v + (b[j] - v) * t); }
+// ---------------------------------------------------------------- page: white, with grainy forms that change per scene
+// Every form is soft colour, blurred, then each pixel is pushed a random few px by real noise (public/grain,
+// feDisplacementMap), so the colour breaks into grain at its edges, with a speckle over the colour. Each scene gets its
+// own form, and the forms cross-fade as the scenes change:
+//   orbs     a grainy orb that jumps to a new place and colour on each spoken symptom
+//   halo     a grainy ring, a neural orbit, turning behind the floating cards
+//   sunrise  a grainy dawn lifting from the bottom of the frame
+//   ribbon   a grainy nerve signal drawing itself diagonally behind the phone
+//   blooms   soft orbs blooming behind the doctors, one per word
+//   mint     a WhatsApp-mint and violet pair behind the booking
+//   brain    two grainy hemispheres breathing towards each other
+//   crown    the dawn again, with a halo round the mark
+export type Form = {kind: 'orbs' | 'halo' | 'sunrise' | 'ribbon' | 'blooms' | 'mint' | 'brain' | 'crown'; from: number; to: number; at?: number[]; flip?: boolean};
+const PAL = {lilac: '#D6B8F6', pink: '#EDB4EE', rose: '#F2A7D8', violet: '#8162F1', indigo: '#5F45EE', sky: '#9DB6FF', mint: '#8EE6C2', aqua: '#7FD8E8'};
+const E = (cx: number, cy: number, rx: number, ry: number, fill: string, o = 1, key?: string) => <ellipse key={key} cx={cx} cy={cy} rx={rx} ry={ry} fill={fill} opacity={o} />;
+
+const renderForm = (fm: Form, f: number, fps: number): React.ReactNode => {
+  const t = f - fm.from;
+  const env = Math.min(io(p(f, fm.from - 4, 16)), 1 - io(p(f, fm.to - 10, 16)));
+  if (env <= 0.001) return null;
+  const w = (k: number, a: number) => Math.sin(f / k) * a;
+  const sx = fm.flip ? -1 : 1;
+  switch (fm.kind) {
+    case 'orbs': {
+      // jumps on each cue: place, size and colour
+      const spots: [number, number, number, string, string][] = [[260, 1460, 330, PAL.rose, PAL.violet], [830, 1380, 360, PAL.sky, PAL.indigo], [540, 1520, 400, PAL.pink, PAL.violet], [300, 1400, 340, PAL.lilac, PAL.indigo]];
+      const cues = fm.at ?? [fm.from];
+      const i = Math.max(0, cues.filter((c) => c <= f).length - 1);
+      const [x, y, r, c1, c2] = spots[i % spots.length];
+      const pop = spring({frame: f - cues[i], fps, config: {damping: 11, stiffness: 120, mass: 0.8}});
+      return (
+        <g opacity={env} transform={`translate(${x + w(30, 20)} ${y + w(37, 16)}) scale(${0.55 + 0.45 * pop})`}>
+          {E(0, 0, r, r * 1.05, c1)}{E(r * 0.25, -r * 0.15, r * 0.62, r * 0.66, c2, 0.85)}{E(-r * 0.35, r * 0.3, r * 0.4, r * 0.32, PAL.pink, 0.7)}
+        </g>
+      );
+    }
+    case 'halo': {
+      // a ring of colour turning slowly, the cards orbit inside its hole
+      const rot = t * 0.9;
+      const R = 440, sw = 150, C = 2 * Math.PI * R;
+      const arc = (color: string, start: number, len: number, o = 1) => <circle key={color + start} cx={0} cy={0} r={R} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={`${len * C} ${C}`} strokeDashoffset={-start * C} opacity={o} />;
+      return (
+        <g opacity={env} transform={`translate(540 900) rotate(${rot}) scale(${0.85 + 0.15 * env}, ${1.18 * (0.85 + 0.15 * env)})`}>
+          {arc(PAL.lilac, 0, 1, 0.9)}{arc(PAL.violet, 0.05, 0.3)}{arc(PAL.rose, 0.42, 0.22)}{arc(PAL.indigo, 0.7, 0.18)}
+        </g>
+      );
+    }
+    case 'sunrise': case 'crown': {
+      const rise = io(p(f, fm.from, 40));
+      const cy = 2260 - rise * 380 + w(45, 14);
+      return (
+        <g opacity={env}>
+          {E(540 + w(60, 40), cy, 860, 520, PAL.lilac)}{E(380 + w(41, 50), cy + 40, 520, 360, PAL.rose, 0.8)}{E(700 + w(52, 40), cy - 30, 460, 330, PAL.violet, 0.9)}{E(560, cy + 120, 300, 200, PAL.indigo, 0.8)}
+          {fm.kind === 'crown' && (
+            <g transform={`translate(540 960) rotate(${t * 1.2}) scale(${0.7 + 0.3 * io(p(f, (fm.at ?? [fm.from])[0], 20))})`} opacity={io(p(f, (fm.at ?? [fm.from])[0], 20))}>
+              <circle r={310} fill="none" stroke={PAL.lilac} strokeWidth={170} />
+              <circle r={310} fill="none" stroke={PAL.violet} strokeWidth={170} strokeDasharray={`${0.35 * 1948} 1948`} />
+              <circle r={310} fill="none" stroke={PAL.rose} strokeWidth={170} strokeDasharray={`${0.2 * 1948} 1948`} strokeDashoffset={-0.55 * 1948} />
+            </g>
+          )}
+        </g>
+      );
+    }
+    case 'ribbon': {
+      // a nerve signal: two strokes drawing themselves across the frame behind the phone
+      const draw = io(p(f, fm.from, 30));
+      const d = 'M -260 1760 C 240 1640, 360 1160, 640 1040 S 1080 620, 1380 380';
+      const off = w(40, 30);
+      return (
+        <g opacity={env} transform={`translate(${fm.flip ? 1080 : 0} ${off}) scale(${sx} 1)`}>
+          <path d={d} fill="none" stroke={PAL.violet} strokeWidth={250} strokeLinecap="round" pathLength={1} strokeDasharray={`${draw} 1`} />
+          <path d={d} fill="none" stroke={PAL.rose} strokeWidth={130} strokeLinecap="round" pathLength={1} strokeDasharray={`${draw} 1`} transform="translate(-60 120)" opacity={0.85} />
+          <path d={d} fill="none" stroke={PAL.sky} strokeWidth={90} strokeLinecap="round" pathLength={1} strokeDasharray={`${draw * 0.9} 1`} transform="translate(90 -110)" opacity={0.7} />
+        </g>
+      );
+    }
+    case 'blooms': {
+      const cues = fm.at ?? [];
+      const spots: [number, number, string][] = [[200, 900, PAL.rose], [830, 1080, PAL.sky], [200, 1240, PAL.violet]];
+      return (
+        <g opacity={env}>
+          {E(540 + w(40, 30), 1080, 420, 520, PAL.lilac, 0.9)}
+          {cues.map((c, i) => {
+            const k = spring({frame: f - c, fps, config: {damping: 12, stiffness: 110, mass: 0.8}});
+            const [x, y, col] = spots[i % spots.length];
+            return f < c ? null : <g key={i} transform={`translate(${x} ${y}) scale(${k})`}>{E(0, 0, 260, 260, col, 0.95)}</g>;
+          })}
+        </g>
+      );
+    }
+    case 'mint':
+      return (
+        <g opacity={env}>
+          {E(820 + w(38, 40), 1000 + w(47, 30), 360, 420, PAL.mint)}{E(300 + w(44, 40), 880 + w(35, 30), 360, 420, PAL.violet, 0.85)}{E(640, 1180, 280, 200, PAL.aqua, 0.7)}
+        </g>
+      );
+    case 'brain': {
+      // two hemispheres, breathing towards each other
+      const gap = 150 + Math.sin(t / 9) * 40 - io(p(f, fm.from, 30)) * 60;
+      return (
+        <g opacity={env} transform="translate(540 1500)">
+          <g transform={`translate(${-gap - 200} 0) rotate(${-8 + w(30, 4)})`}>{E(0, 0, 300, 330, PAL.violet)}{E(-80, 90, 180, 160, PAL.indigo, 0.8)}</g>
+          <g transform={`translate(${gap + 200} 0) rotate(${8 - w(30, 4)})`}>{E(0, 0, 300, 330, PAL.rose)}{E(80, 90, 180, 160, PAL.pink, 0.9)}</g>
+        </g>
+      );
+    }
   }
-  return keys[keys.length - 1].slice(1);
+  return null;
 };
-export const Page: React.FC<{keys: BlobKey[]}> = ({keys}) => {
+
+export const Page: React.FC<{forms: Form[]}> = ({forms}) => {
   const f = useCurrentFrame();
-  const [x, y, sc] = blobAt(keys, f);
+  const {fps} = useVideoConfig();
   const seed = Math.floor(f / 3) % 4; // the grain changes every 3 frames, like film
   const noise = staticFile(`grain/noise-${seed}.png`); // random pixels (public/grain), 540 x 960 drawn at 2x
-  const w = (k: number, a: number) => Math.sin(f / k) * a;
   const id = `grain${seed}`;
   return (
     <AbsoluteFill style={{background: '#FFFFFF', overflow: 'hidden'}}>
@@ -47,7 +142,7 @@ export const Page: React.FC<{keys: BlobKey[]}> = ({keys}) => {
       <svg width="1080" height="1920" style={{position: 'absolute', inset: 0}}>
         <defs>
           <filter id={id} filterUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920" colorInterpolationFilters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="95" result="soft" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="80" result="soft" />
             <feImage href={noise} x="0" y="0" width="1080" height="1920" preserveAspectRatio="none" result="n" />
             {/* every pixel pushed a random few px: the colour scatters into grain at its edges */}
             <feDisplacementMap in="soft" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G" result="grainy" />
@@ -58,15 +153,7 @@ export const Page: React.FC<{keys: BlobKey[]}> = ({keys}) => {
             <feComposite in="speck" in2="grainy" operator="arithmetic" k1="0" k2="0.55" k3="0.45" k4="0" />
           </filter>
         </defs>
-        <g filter={`url(#${id})`}>
-        <g transform={`translate(${x + w(47, 24)} ${y + w(61, 30)}) scale(${sc * (1 + w(53, 0.03))}) rotate(${w(90, 8)})`}>
-          <ellipse cx={-70 + w(38, 30)} cy={70} rx={440} ry={480} fill="#D4B4F5" />
-          <ellipse cx={-210 + w(44, 26)} cy={270 + w(57, 24)} rx={270} ry={210} fill="#EFC0F0" opacity={0.75} />
-          <ellipse cx={120 + w(41, 34)} cy={-40 + w(36, 30)} rx={290} ry={330} fill="#8565F0" opacity={0.85} />
-          <ellipse cx={230 + w(50, 22)} cy={90} rx={170} ry={250} fill="#6E50F0" opacity={0.65} />
-          <ellipse cx={-20} cy={-300 + w(46, 20)} rx={260} ry={150} fill="#B9A6FA" opacity={0.6} />
-        </g>
-        </g>
+        <g filter={`url(#${id})`}>{forms.map((fm, i) => <React.Fragment key={i}>{renderForm(fm, f, fps)}</React.Fragment>)}</g>
       </svg>
     </AbsoluteFill>
   );
@@ -330,7 +417,7 @@ const Whats: React.FC<{f: number}> = ({f}) => {
   );
   return (
     <>
-      <Row y={1350}><Slam f={f} at={570} size={56} weight={300} color="#1DA851" leave={598}>عبر واتساب</Slam></Row>
+      <Row y={1350}><Slam f={f} at={570} size={56} weight={500} color="#0F7A3F" leave={598}>عبر واتساب</Slam></Row>
       {f >= 583 && pill('واتساب', a, 600, 880, 14)}
       {f >= 594 && pill('تم ✓', b, 90, 1180, -12)}
     </>
@@ -384,15 +471,24 @@ const SFX: [number, string, number][] = [
   [600, 'whoosh', 0.18], [797, 'bloom', 0.3],
 ];
 
-// where the blob sits behind each scene: frame, x, y, scale
-const BLOB: BlobKey[] = [[0, 600, 1500, 0.8], [76, 500, 1520, 0.85], [180, 540, 1500, 0.85], [204, 600, 1540, 0.8], [262, 540, 1180, 0.95], [604, 540, 1180, 0.95], [626, 440, 1560, 0.85], [700, 440, 1560, 0.85], [730, 600, 1560, 0.9]];
+// the grainy forms behind each scene (see Page)
+const FORMS: Form[] = [
+  {kind: 'orbs', from: 0, to: 84, at: [6, 31, 55]},
+  {kind: 'halo', from: 74, to: 170},
+  {kind: 'sunrise', from: 192, to: 272},
+  {kind: 'ribbon', from: 262, to: 408},
+  {kind: 'blooms', from: 403, to: 524, at: [455, 477, 494]},
+  {kind: 'mint', from: 518, to: 610},
+  {kind: 'brain', from: 604, to: 706},
+  {kind: 'crown', from: 700, to: 900, at: [797]},
+];
 
 export const Story: React.FC = () => {
   const f = useCurrentFrame();
   const [sx, sy] = shake(f);
   return (
     <AbsoluteFill>
-      <Page keys={BLOB} />
+      <Page forms={FORMS} />
       <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${1 + kick(f)})`}}>
         <Symptoms f={f} />
         <Ring f={f} />
