@@ -16,7 +16,7 @@ if [ "$LANGV" = en ]; then
   python3 -I audio/extend_score.py "$D/music-2.mp3" "$T/score.wav" 118 0.11 24 40 >/dev/null
   SCORE="$T/score.wav"
 else
-  # «ومتى تتصل برقم الطوارئ» re-recorded and spliced over the line that read out 9999
+  # «تعرّف على الأعراض… ومتى تتصل برقم الطوارئ» re-recorded and spliced over the line that read out 9999
   python3 -I audio/splice_line.py "$D/fus-b.mp3" "$D/line-ar-emergency.mp3" "$T/vo-1.wav" 8.757 13.169 >/dev/null
   # «نيورو يونيفرس… بموقعها الجديد» re-recorded over the clinic-name line (the take's voice glitched high on it)
   python3 -I audio/splice_line.py "$T/vo-1.wav" "$D/line-ar-neurouniverse.mp3" "$T/vo-src.wav" 5.88 8.566
