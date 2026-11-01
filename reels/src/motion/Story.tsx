@@ -19,18 +19,54 @@ export const out = (t: number) => 1 - Math.pow(1 - clamp(t), 4);
 export const p = (f: number, a: number, d: number) => clamp((f - a) / d);
 export const spr = (f: number, at: number, fps: number, c = {damping: 12, stiffness: 160, mass: 0.7}) => spring({frame: f - at, fps, config: c});
 
-// ---------------------------------------------------------------- page: white, a violet glow rising from the bottom, grain
-export const Page: React.FC<{glow: number}> = ({glow}) => {
+// ---------------------------------------------------------------- page: white, with a grainy gradient blob
+// A few soft colour fields (pink-lilac, violet, blue-violet) are blurred together, then every pixel is pushed about by
+// fine noise (feDisplacementMap), so the colour breaks into grain at its edges like a risograph print; a speckle of the
+// same noise sits over the colour. The blob breathes, drifts, and glides to a new place behind each scene.
+export type BlobKey = [number, number, number, number]; // frame, centre x, centre y, scale
+const smooth = (t: number) => t * t * (3 - 2 * t);
+const blobAt = (keys: BlobKey[], f: number) => {
+  if (f <= keys[0][0]) return keys[0].slice(1);
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [f0, ...a] = keys[i], [f1, ...b] = keys[i + 1];
+    if (f <= f1) { const t = smooth((f - f0) / Math.max(1, f1 - f0)); return a.map((v, j) => v + (b[j] - v) * t); }
+  }
+  return keys[keys.length - 1].slice(1);
+};
+export const Page: React.FC<{keys: BlobKey[]}> = ({keys}) => {
   const f = useCurrentFrame();
-  const seed = Math.floor(f / 2) % 8;
-  const w = (k: number) => Math.sin(f / k) * 50;
+  const [x, y, sc] = blobAt(keys, f);
+  const seed = Math.floor(f / 3) % 4; // the grain changes every 3 frames, like film
+  const noise = staticFile(`grain/noise-${seed}.png`); // random pixels (public/grain), 540 x 960 drawn at 2x
+  const w = (k: number, a: number) => Math.sin(f / k) * a;
+  const id = `grain${seed}`;
   return (
     <AbsoluteFill style={{background: '#FFFFFF', overflow: 'hidden'}}>
-      <div style={{position: 'absolute', left: -300 + w(40), right: -300 - w(50), bottom: -900 + (1 - glow) * 500, height: 1500, borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 50%, rgba(124,80,255,.85), rgba(178,140,255,.55) 35%, rgba(230,190,255,.25) 55%, rgba(255,255,255,0) 72%)', filter: 'blur(40px)'}} />
-      <div style={{position: 'absolute', left: 120 + w(33), bottom: -300 + (1 - glow) * 400, width: 900, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,120,210,.45), rgba(255,255,255,0) 65%)', filter: 'blur(50px)'}} />
-      <svg width="1080" height="1920" style={{position: 'absolute', inset: 0, opacity: 0.4, mixBlendMode: 'soft-light'}}>
-        <filter id={`sg${seed}`}><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed={seed} stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
-        <rect width="100%" height="100%" filter={`url(#sg${seed})`} />
+      {/* loads the grain before the frame is taken (the filter's image is then already in the cache) */}
+      <Img src={noise} style={{position: 'absolute', width: 1, height: 1, opacity: 0}} />
+      <svg width="1080" height="1920" style={{position: 'absolute', inset: 0}}>
+        <defs>
+          <filter id={id} filterUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920" colorInterpolationFilters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="95" result="soft" />
+            <feImage href={noise} x="0" y="0" width="1080" height="1920" preserveAspectRatio="none" result="n" />
+            {/* every pixel pushed a random few px: the colour scatters into grain at its edges */}
+            <feDisplacementMap in="soft" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G" result="grainy" />
+            {/* and a speckle over the colour (overlay leaves white untouched) */}
+            <feColorMatrix in="n" type="saturate" values="0" result="ng" />
+            <feComposite in="ng" in2="grainy" operator="in" result="ngi" />
+            <feBlend in="ngi" in2="grainy" mode="overlay" result="speck" />
+            <feComposite in="speck" in2="grainy" operator="arithmetic" k1="0" k2="0.55" k3="0.45" k4="0" />
+          </filter>
+        </defs>
+        <g filter={`url(#${id})`}>
+        <g transform={`translate(${x + w(47, 24)} ${y + w(61, 30)}) scale(${sc * (1 + w(53, 0.03))}) rotate(${w(90, 8)})`}>
+          <ellipse cx={-70 + w(38, 30)} cy={70} rx={440} ry={480} fill="#D4B4F5" />
+          <ellipse cx={-210 + w(44, 26)} cy={270 + w(57, 24)} rx={270} ry={210} fill="#EFC0F0" opacity={0.75} />
+          <ellipse cx={120 + w(41, 34)} cy={-40 + w(36, 30)} rx={290} ry={330} fill="#8565F0" opacity={0.85} />
+          <ellipse cx={230 + w(50, 22)} cy={90} rx={170} ry={250} fill="#6E50F0" opacity={0.65} />
+          <ellipse cx={-20} cy={-300 + w(46, 20)} rx={260} ry={150} fill="#B9A6FA" opacity={0.6} />
+        </g>
+        </g>
       </svg>
     </AbsoluteFill>
   );
@@ -168,7 +204,7 @@ const Flood: React.FC<{f: number}> = ({f}) => {
   const r = 40 + grow * 1300 - drain * 1300;
   const ring = f >= 196; // once drained, the disc becomes a ring waiting for the mark
   const pulse = 1 + Math.sin((f - 196) / 3) * 0.04;
-  const away = out(p(f, 244, 8));
+  const away = out(p(f, 222, 8)); // gone before the name moves up past it
   return (
     <>
       {!ring ? (
@@ -348,13 +384,15 @@ const SFX: [number, string, number][] = [
   [600, 'whoosh', 0.18], [797, 'bloom', 0.3],
 ];
 
+// where the blob sits behind each scene: frame, x, y, scale
+const BLOB: BlobKey[] = [[0, 600, 1500, 0.8], [76, 500, 1520, 0.85], [180, 540, 1500, 0.85], [204, 600, 1540, 0.8], [262, 540, 1180, 0.95], [604, 540, 1180, 0.95], [626, 440, 1560, 0.85], [700, 440, 1560, 0.85], [730, 600, 1560, 0.9]];
+
 export const Story: React.FC = () => {
   const f = useCurrentFrame();
-  const glow = interpolate(f, [0, 12, 250, 268, 600, 620, 790, 840], [0.35, 0.7, 0.7, 0.35, 0.35, 0.85, 0.85, 1], {extrapolateRight: 'clamp'});
   const [sx, sy] = shake(f);
   return (
     <AbsoluteFill>
-      <Page glow={glow} />
+      <Page keys={BLOB} />
       <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${1 + kick(f)})`}}>
         <Symptoms f={f} />
         <Ring f={f} />
