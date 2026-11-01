@@ -9,6 +9,8 @@ for (const [family, weight, file, unicodeRange] of fonts as [string, string, str
 
 export const AR = '"IBM Plex Sans Arabic", "Inter", sans-serif';
 export const EN = '"Inter", "IBM Plex Sans Arabic", sans-serif';
+// slim and techy: Inter's tight display cut, used at light weights (the Story reels)
+export const EN_THIN = '"Inter Tight", "Inter", "IBM Plex Sans Arabic", sans-serif';
 
 // Site palette (assets/css/site.css)
 export const C = {

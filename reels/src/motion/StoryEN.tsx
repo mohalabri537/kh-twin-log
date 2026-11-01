@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Img, interpolate, Sequence, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {Phone} from '../studio/devices';
-import {EN} from '../theme';
+import {EN_THIN as EN} from '../theme';
 import {Chip, clamp, GREY, Ico, INK, io, Mark, out, p, Page, RING, Row, Slam as SlamAR, spr, VIO} from './Story';
 
 // The longer English cut of the Story reel (38 s, 30 fps): the same look and score as the Arabic one, with a British
@@ -53,7 +53,7 @@ const Captions: React.FC<{f: number}> = ({f}) => {
           const next = c.w[i + 1]?.[1] ?? c.to;
           const on = f >= at, now = on && f < next;
           const pop = now ? 1 + 0.08 * Math.exp(-(f - at) / 3) : 1;
-          return <span key={i} style={{fontFamily: EN, fontWeight: 700, fontSize: 46, lineHeight: 1.2, color: now ? VIO : INK, opacity: on ? 1 : 0.28, display: 'inline-block', transform: `scale(${pop})`}}>{w}</span>;
+          return <span key={i} style={{fontFamily: EN, fontWeight: 400, fontSize: 48, lineHeight: 1.2, color: now ? VIO : INK, opacity: on ? 1 : 0.28, display: 'inline-block', transform: `scale(${pop})`}}>{w}</span>;
         })}
       </div>
     </div>
@@ -99,7 +99,7 @@ const Symptoms: React.FC<{f: number}> = ({f}) => {
             <div style={{position: 'absolute', left: 455, top: 640, width: 170, height: 170, borderRadius: 52, background: 'rgba(255,255,255,.9)', boxShadow: '0 24px 44px -18px rgba(90,40,200,.45), inset 0 0 0 1.5px rgba(124,80,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `scale(${k}) rotate(${(1 - k) * dir * 30}deg)`}}>
               <Ico n={icon} size={100} />
             </div>
-            <div style={{position: 'absolute', top: 880, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 800, fontSize: size, letterSpacing: -size * 0.03, color: i === 1 ? VIO : INK, lineHeight: 1.2, transform: `scale(${1.4 - 0.4 * k})`, opacity: clamp(k * 3)}}>{word}</div>
+            <div style={{position: 'absolute', top: 880, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 200, fontSize: size, letterSpacing: -size * 0.03, color: i === 1 ? VIO : INK, lineHeight: 1.2, transform: `scale(${1.4 - 0.4 * k})`, opacity: clamp(k * 3)}}>{word}</div>
             <div style={{position: 'absolute', top: 1180, width: '100%', display: 'flex', justifyContent: 'center', gap: 18}}>
               {[0, 1, 2].map((j) => <div key={j} style={{width: 18, height: 18, borderRadius: 9, background: j === i ? VIO : 'rgba(124,80,255,.22)'}} />)}
             </div>
@@ -154,7 +154,7 @@ const Flood: React.FC<{f: number}> = ({f}) => {
       )}
       {f < 264 && (
         <div style={{position: 'absolute', top: 760, width: '100%', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', opacity: 1 - io(p(f, 256, 6))}}>
-          <Slam f={f} at={230} size={140} weight={800} color="#fff">We've</Slam><Slam f={f} at={241} size={140} weight={800} color="#fff">got</Slam><Slam f={f} at={247} size={140} weight={800} color="#fff">you.</Slam>
+          <Slam f={f} at={230} size={124} weight={200} color="#fff">We've</Slam><Slam f={f} at={241} size={124} weight={200} color="#fff">got</Slam><Slam f={f} at={247} size={124} weight={200} color="#fff">you.</Slam>
         </div>
       )}
     </>
@@ -174,14 +174,14 @@ const Brand: React.FC<{f: number}> = ({f}) => {
     <AbsoluteFill style={{opacity: 1 - leave, transform: `translateY(${-leave * 140}px)`}}>
       {f >= 281 && <div style={{position: 'absolute', left: 540, top: 860 - up * 240, transform: `translate(-50%,-50%) scale(${grow * (1 - up * 0.35)})`}}><Mark size={360} /></div>}
       <div style={{position: 'absolute', top: 1040 - up * 260, left: 40, right: 40, display: 'flex', flexWrap: 'wrap', justifyContent: 'center'}}>
-        <Slam f={f} at={267} size={92} weight={800}>Neuro</Slam><Slam f={f} at={281} size={92} weight={800}>Universe</Slam><Slam f={f} at={296} size={92} weight={800} color={VIO}>Clinic</Slam>
+        <Slam f={f} at={267} size={92} weight={300}>Neuro</Slam><Slam f={f} at={281} size={92} weight={300}>Universe</Slam><Slam f={f} at={296} size={92} weight={300} color={VIO}>Clinic</Slam>
       </div>
       {f >= 308 && (
         <>
-          <Line y={1040}><Slam f={f} at={308} size={62} weight={500} color={GREY}>has a</Slam><Slam f={f} at={325} size={62} weight={700} color={VIO}>brand-new</Slam><Slam f={f} at={342} size={62} weight={500} color={GREY}>website</Slam></Line>
+          <Line y={1040}><Slam f={f} at={308} size={62} weight={300} color={GREY}>has a</Slam><Slam f={f} at={325} size={62} weight={300} color={VIO}>brand-new</Slam><Slam f={f} at={342} size={62} weight={300} color={GREY}>website</Slam></Line>
           <div style={{position: 'absolute', left: 210, top: 1170, width: 660, height: 104, borderRadius: 52, background: 'rgba(255,255,255,.92)', boxShadow: '0 20px 40px -18px rgba(90,40,200,.45), inset 0 0 0 1.5px rgba(124,80,255,.18)', display: 'flex', alignItems: 'center', gap: 20, padding: '0 36px', transform: `scale(${spr(f, 326, fps)})`}}>
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={VIO} strokeWidth="2.2" strokeLinecap="round"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
-            <span style={{fontFamily: EN, fontWeight: 500, fontSize: 46, color: INK}}>{url.slice(0, typed)}<span style={{display: 'inline-block', width: 4, height: 46, marginLeft: 4, background: VIO, verticalAlign: 'middle', opacity: Math.floor(f / 8) % 2 ? 1 : 0}} /></span>
+            <span style={{fontFamily: EN, fontWeight: 300, fontSize: 46, color: INK}}>{url.slice(0, typed)}<span style={{display: 'inline-block', width: 4, height: 46, marginLeft: 4, background: VIO, verticalAlign: 'middle', opacity: Math.floor(f / 8) % 2 ? 1 : 0}} /></span>
           </div>
         </>
       )}
@@ -207,8 +207,8 @@ const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
     <AbsoluteFill style={{transform: `translateY(${-leave * 1500}px)`, filter: leave > 0.02 ? `blur(${leave * 14}px)` : undefined}}>
       {/* the title (one or two lines) with the spoken line flowing under it */}
       <div style={{position: 'absolute', top: 268, left: 90, right: 90, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', lineHeight: 1}}>{u.head.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={70} weight={800} color={c ?? INK}>{w}</Slam>)}</div>
-        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', marginTop: -4}}>{u.sub.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={44} weight={600} color={c ?? GREY}>{w}</Slam>)}</div>
+        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', lineHeight: 1}}>{u.head.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={70} weight={300} color={c ?? INK}>{w}</Slam>)}</div>
+        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', marginTop: -4}}>{u.sub.map(([w, at, c], i) => <Slam key={i} f={f} at={at} size={44} weight={300} color={c ?? GREY}>{w}</Slam>)}</div>
       </div>
       <Sequence from={u.from} durationInFrames={u.to - u.from + 4} layout="none">
         <AbsoluteFill style={{transform: `translateY(${(1 - rise) * 1300}px) rotate(${(1 - rise) * 5}deg)`}}>
@@ -231,7 +231,7 @@ const Counter: React.FC<{f: number}> = ({f}) => {
   const leave = io(p(f, 492, 9));
   return (
     <div style={{position: 'absolute', left: 70, top: 760 - leave * 1500, transform: `rotate(${-6 + first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '0 50%'}}>
-      <div style={{padding: '22px 40px', borderRadius: 999, background: '#D70015', color: '#fff', fontFamily: EN, fontWeight: 800, fontSize: 92, letterSpacing: 2, boxShadow: '0 22px 40px -14px rgba(215,0,21,.55)', display: 'flex', alignItems: 'center', gap: 18}}>
+      <div style={{padding: '22px 40px', borderRadius: 999, background: '#D70015', color: '#fff', fontFamily: EN, fontWeight: 300, fontSize: 92, letterSpacing: 2, boxShadow: '0 22px 40px -14px rgba(215,0,21,.55)', display: 'flex', alignItems: 'center', gap: 18}}>
         <Ico n="phone" size={70} color="#fff" />{'9'.repeat(n)}
       </div>
     </div>
@@ -250,7 +250,7 @@ const Games: React.FC<{f: number}> = ({f}) => {
         if (f < at) return null;
         const k = spring({frame: f - at, fps, config: {damping: 10, stiffness: 260, mass: 0.55}});
         return (
-          <div key={i} style={{position: 'absolute', left: x, top: y - leave * 1500, padding: '18px 32px', borderRadius: 999, background: i === 2 ? VIO : '#fff', color: i === 2 ? '#fff' : INK, fontFamily: EN, fontWeight: 700, fontSize: 48, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 20px 38px -14px rgba(90,40,200,.5), inset 0 0 0 1.5px rgba(124,80,255,.16)', transform: `scale(${k}) rotate(${(1 - k) * (i % 2 ? 14 : -14) + (i % 2 ? 4 : -4)}deg)`}}>
+          <div key={i} style={{position: 'absolute', left: x, top: y - leave * 1500, padding: '18px 32px', borderRadius: 999, background: i === 2 ? VIO : '#fff', color: i === 2 ? '#fff' : INK, fontFamily: EN, fontWeight: 400, fontSize: 48, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 20px 38px -14px rgba(90,40,200,.5), inset 0 0 0 1.5px rgba(124,80,255,.16)', transform: `scale(${k}) rotate(${(1 - k) * (i % 2 ? 14 : -14) + (i % 2 ? 4 : -4)}deg)`}}>
             <Ico n={n} size={46} color={i === 2 ? '#fff' : VIO} />{t}
           </div>
         );
@@ -289,7 +289,7 @@ const Whats: React.FC<{f: number}> = ({f}) => {
   const b = spring({frame: f - 912, fps, config: {damping: 10, stiffness: 260, mass: 0.55}});
   const leave = io(p(f, 920, 9));
   const pill = (txt: string, k: number, x: number, y: number, rot: number) => (
-    <div style={{position: 'absolute', left: x, top: y - leave * 1500, padding: '20px 38px', borderRadius: 999, background: '#25D366', color: '#fff', fontFamily: EN, fontWeight: 800, fontSize: 56, boxShadow: '0 20px 38px -12px rgba(37,211,102,.55)', transform: `scale(${k}) rotate(${rot * (1 - k) + rot * 0.3}deg)`, opacity: clamp(k * 3)}}>{txt}</div>
+    <div style={{position: 'absolute', left: x, top: y - leave * 1500, padding: '20px 38px', borderRadius: 999, background: '#25D366', color: '#fff', fontFamily: EN, fontWeight: 400, fontSize: 56, boxShadow: '0 20px 38px -12px rgba(37,211,102,.55)', transform: `scale(${k}) rotate(${rot * (1 - k) + rot * 0.3}deg)`, opacity: clamp(k * 3)}}>{txt}</div>
   );
   return (
     <>
@@ -302,8 +302,8 @@ const Whats: React.FC<{f: number}> = ({f}) => {
 // ---------------------------------------------------------------- 30.8–33.8 s "Whatever your question, we're here to guide you."
 const Guide: React.FC<{f: number}> = ({f}) => (f < 925 || f > 1018 ? null : (
   <>
-    <Line y={760}><Slam f={f} at={930} leave={1010} size={104} weight={800}>Whatever</Slam><Slam f={f} at={937} leave={1010} size={104} weight={800}>your</Slam><Slam f={f} at={945} leave={1010} size={104} weight={800} color={VIO}>question,</Slam></Line>
-    <Line y={1020}><Slam f={f} at={971} leave={1010} size={104} weight={800}>we're here</Slam><Slam f={f} at={983} leave={1010} size={104} weight={800}>to</Slam><Slam f={f} at={990} leave={1010} size={104} weight={800} color={VIO}>guide you.</Slam></Line>
+    <Line y={760}><Slam f={f} at={930} leave={1010} size={104} weight={300}>Whatever</Slam><Slam f={f} at={937} leave={1010} size={104} weight={300}>your</Slam><Slam f={f} at={945} leave={1010} size={104} weight={300} color={VIO}>question,</Slam></Line>
+    <Line y={1020}><Slam f={f} at={971} leave={1010} size={104} weight={300}>we're here</Slam><Slam f={f} at={983} leave={1010} size={104} weight={300}>to</Slam><Slam f={f} at={990} leave={1010} size={104} weight={300} color={VIO}>guide you.</Slam></Line>
     <Chip f={f} at={946} n="heart" x={190} y={620} size={100} rot={-10} leave={1010} />
     <Chip f={f} at={992} n="check" x={850} y={1260} size={100} rot={10} leave={1010} />
     <Chip f={f} at={975} n="star" x={850} y={620} size={80} rot={8} leave={1010} />
@@ -323,14 +323,14 @@ const Cta: React.FC<{f: number}> = ({f}) => {
   const mark = spring({frame: f - 1050, fps, config: {damping: 11, stiffness: 170, mass: 0.7}});
   return (
     <AbsoluteFill>
-      <div style={{position: 'absolute', left: 60, right: 60, top: 800 - lift * 260, textAlign: 'center', fontFamily: EN, fontWeight: 800, fontSize: 112 - lift * 28, lineHeight: 1.15, letterSpacing: -2, color: VIO}}>
+      <div style={{position: 'absolute', left: 60, right: 60, top: 800 - lift * 260, textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 112 - lift * 28, lineHeight: 1.15, letterSpacing: -2, color: VIO}}>
         {f >= 1019 ? text : ''}<span style={{display: 'inline-block', width: 8, height: 110 - lift * 28, marginLeft: 8, background: VIO, verticalAlign: 'middle', opacity: caret && lift < 0.5 ? 1 : 0}} />
       </div>
       {f >= 1050 && (
         <>
           <div style={{position: 'absolute', left: 540, top: 1000, transform: `translate(-50%,-50%) scale(${mark})`}}><Mark size={260} /></div>
-          <div style={{position: 'absolute', top: 1150, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 600, fontSize: 54, color: INK, opacity: out(p(f, 1060, 10)), transform: `translateY(${(1 - out(p(f, 1060, 10))) * 24}px)`}}>neurouniverse.om</div>
-          <div style={{position: 'absolute', top: 1236, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 500, fontSize: 40, color: GREY, opacity: out(p(f, 1068, 10))}}>Neuro Universe Clinic · Muscat · Link in bio</div>
+          <div style={{position: 'absolute', top: 1150, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 54, color: INK, opacity: out(p(f, 1060, 10)), transform: `translateY(${(1 - out(p(f, 1060, 10))) * 24}px)`}}>neurouniverse.om</div>
+          <div style={{position: 'absolute', top: 1236, width: '100%', textAlign: 'center', fontFamily: EN, fontWeight: 300, fontSize: 40, color: GREY, opacity: out(p(f, 1068, 10))}}>Neuro Universe Clinic · Muscat · Link in bio</div>
         </>
       )}
     </AbsoluteFill>
