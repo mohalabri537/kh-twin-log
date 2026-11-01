@@ -19,61 +19,39 @@ export const out = (t: number) => 1 - Math.pow(1 - clamp(t), 4);
 export const p = (f: number, a: number, d: number) => clamp((f - a) / d);
 export const spr = (f: number, at: number, fps: number, c = {damping: 12, stiffness: 160, mass: 0.7}) => spring({frame: f - at, fps, config: c});
 
-// ---------------------------------------------------------------- page: white, with an ensemble of grainy blobs
-// Five blobs live through the whole reel, each with its own colour, and move as one: from formation to formation (one
-// per scene, chosen to frame what is on screen and leave the words on white), each a few frames behind the last, like
-// a flock, always breathing and drifting. Where they overlap the colours mix. On spoken beats one of them swells.
-// Every pixel is then pushed a random few px by real noise (public/grain, feDisplacementMap), so the colour breaks into
-// grain at its edges, with a speckle over the colour.
-export type Formation = 'corners' | 'orbit' | 'dawn' | 'stage' | 'hemispheres' | 'flank';
-export type Plan = {at: [number, Formation][]; beats: number[]};
-const BLOBS = [
-  {c: '#8162F1', h: '#9C83F6'}, // violet
-  {c: '#F0A8DA', h: '#F7C6E8'}, // rose
-  {c: '#9DB6FF', h: '#C3D1FF'}, // sky
-  {c: '#6247EE', h: '#7E66F2'}, // indigo
-  {c: '#D3B5F6', h: '#E6D5FA'}, // lilac
+// ---------------------------------------------------------------- page: white, with grainy open arcs
+// One system for the whole reel: three open arcs sharing a centre, like orbits or brain waves, each a soft gradient
+// stroke with round ends that turns at its own speed; a hairline ring with fine ticks over them; and one faint glow.
+// The system glides as a whole from pose to pose (one per scene: horizon lines under the words, orbits round the
+// cards, a frame round the phone, a crown round the mark), and the arcs pulse on spoken beats. The colour is grainy
+// inside (real random-pixel noise, public/grain, nudging each pixel a few px and speckling it); the edges stay clean.
+export type Pose = [number, number, number, number]; // centre x, centre y, scale, rotation (deg)
+export type Plan = {at: [number, Pose][]; beats: number[]};
+const ARCS = [
+  {r: 520, w: 78, sweep: 0.52, speed: 0.22, c1: '#9278F4', c2: '#6A51EE', o: 0.8},
+  {r: 690, w: 58, sweep: 0.4, speed: -0.16, c1: '#F4B4DE', c2: '#CDB0F8', o: 0.85},
+  {r: 850, w: 42, sweep: 0.32, speed: 0.11, c1: '#B4C6FF', c2: '#9A80F4', o: 0.75},
 ];
-type XYR = [number, number, number];
-const FORMATIONS: Record<Formation, (t: number) => XYR[]> = {
-  // round the edges, framing the words in the middle
-  corners: () => [[110, 420, 330], [990, 640, 280], [70, 1620, 380], [1010, 1480, 340], [560, 1930, 300]],
-  // circling the floating cards
-  orbit: (t) => [0, 1, 2, 3, 4].map((i) => { const a = (i / 5) * Math.PI * 2 + t / 45; return [540 + Math.cos(a) * 520, 920 + Math.sin(a) * 760, 250 + (i % 2) * 60] as XYR; }),
-  // gathered low, a dawn under the words
-  dawn: () => [[300, 1760, 360], [800, 1800, 330], [540, 1960, 380], [110, 1520, 260], [980, 1560, 280]],
-  // a cluster behind the phone
-  stage: () => [[560, 980, 330], [360, 1260, 280], [760, 760, 260], [600, 1330, 300], [190, 640, 220]],
-  // two hemispheres under the words
-  hemispheres: () => [[330, 1500, 300], [760, 1500, 300], [540, 1820, 220], [230, 1660, 230], [860, 1680, 230]],
-  // up the sides, the middle left clear
-  flank: () => [[60, 900, 300], [1020, 1100, 300], [980, 520, 240], [100, 1450, 300], [540, 1960, 280]],
-};
-const ease = (x: number) => { const t = clamp(x); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-const ensemble = (plan: Plan, f: number): XYR[] => {
+const easeIO = (x: number) => { const t = clamp(x); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const poseAt = (plan: Plan, f: number): Pose => {
   const at = plan.at;
-  return BLOBS.map((_, i) => {
-    const lag = i * 4; // each blob follows a few frames behind the one before
-    let k = 0;
-    while (k < at.length - 1 && f - lag >= at[k + 1][0]) k++;
-    const cur = FORMATIONS[at[k][1]](f)[i];
-    if (k === 0) return cur;
-    const prev = FORMATIONS[at[k - 1][1]](f)[i];
-    const m = ease((f - lag - at[k][0]) / 34);
-    return [prev[0] + (cur[0] - prev[0]) * m, prev[1] + (cur[1] - prev[1]) * m, prev[2] + (cur[2] - prev[2]) * m];
-  });
+  let k = 0;
+  while (k < at.length - 1 && f >= at[k + 1][0]) k++;
+  if (k === 0) return at[0][1];
+  const m = easeIO((f - at[k][0]) / 40);
+  const a = at[k - 1][1], b = at[k][1];
+  return a.map((v, i) => v + (b[i] - v) * m) as Pose;
 };
 
 export const Page: React.FC<{plan: Plan}> = ({plan}) => {
   const f = useCurrentFrame();
-  const {fps} = useVideoConfig();
   const seed = Math.floor(f / 3) % 4; // the grain changes every 3 frames, like film
   const noise = staticFile(`grain/noise-${seed}.png`); // random pixels (public/grain), 540 x 960 drawn at 2x
   const id = `grain${seed}`;
-  const pos = ensemble(plan, f);
-  // the latest beat swells one blob in turn
+  const [cx, cy, sc, rot] = poseAt(plan, f);
   const bi = plan.beats.filter((b) => b <= f).length - 1;
-  const swell = bi < 0 ? 0 : Math.exp(-(f - plan.beats[bi]) / 9) * (1 - spring({frame: f - plan.beats[bi], fps, config: {damping: 8, stiffness: 200, mass: 0.5}}) * 0.6);
+  const pulse = bi < 0 ? 0 : Math.exp(-(f - plan.beats[bi]) / 7);
+  const intro = io(p(f, 0, 24));
   return (
     <AbsoluteFill style={{background: '#FFFFFF', overflow: 'hidden'}}>
       {/* loads the grain before the frame is taken (the filter's image is then already in the cache) */}
@@ -81,30 +59,50 @@ export const Page: React.FC<{plan: Plan}> = ({plan}) => {
       <svg width="1080" height="1920" style={{position: 'absolute', inset: 0}}>
         <defs>
           <filter id={id} filterUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920" colorInterpolationFilters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="70" result="soft" />
+            {/* the core: clean edge, fine grain inside */}
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="soft" />
             <feImage href={noise} x="0" y="0" width="1080" height="1920" preserveAspectRatio="none" result="n" />
-            {/* every pixel pushed a random few px: the colour scatters into grain at its edges */}
-            <feDisplacementMap in="soft" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G" result="grainy" />
-            {/* and a speckle over the colour (overlay leaves white untouched) */}
+            <feDisplacementMap in="soft" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G" result="grainy" />
             <feColorMatrix in="n" type="saturate" values="0" result="ng" />
             <feComposite in="ng" in2="grainy" operator="in" result="ngi" />
             <feBlend in="ngi" in2="grainy" mode="overlay" result="speck" />
-            <feComposite in="speck" in2="grainy" operator="arithmetic" k1="0" k2="0.55" k3="0.45" k4="0" />
+            <feComposite in="speck" in2="grainy" operator="arithmetic" k1="0" k2="0.5" k3="0.5" k4="0" />
           </filter>
+          <filter id={`halo${seed}`} filterUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920" colorInterpolationFilters="sRGB">
+            {/* the halo: a wide soft falloff, scattered into grain like a risograph */}
+            <feGaussianBlur in="SourceGraphic" stdDeviation="34" result="soft" />
+            <feImage href={noise} x="0" y="0" width="1080" height="1920" preserveAspectRatio="none" result="n" />
+            <feDisplacementMap in="soft" in2="n" scale="40" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+          <filter id="glowBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="90" /></filter>
+          {ARCS.map((a, i) => (
+            <linearGradient key={i} id={`arcg${i}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={a.c1} /><stop offset="1" stopColor={a.c2} /></linearGradient>
+          ))}
         </defs>
-        <g filter={`url(#${id})`}>
-          {pos.map(([x, y, r], i) => {
-            const b = BLOBS[i];
-            const breathe = 1 + Math.sin(f / (17 + i * 3) + i) * 0.05 + (bi >= 0 && bi % BLOBS.length === i ? swell * 0.35 : 0);
-            const dx = Math.sin(f / (29 + i * 5) + i * 2) * 26, dy = Math.cos(f / (33 + i * 4) + i) * 22;
-            const rr = r * breathe;
-            return (
-              <g key={i} transform={`translate(${x + dx} ${y + dy}) rotate(${(f / (2 + i)) % 360})`} style={{mixBlendMode: 'multiply'}}>
-                <ellipse rx={rr * 1.08} ry={rr * 0.94} fill={b.c} opacity={0.85} />
-                <ellipse cx={-rr * 0.28} cy={-rr * 0.22} rx={rr * 0.55} ry={rr * 0.5} fill={b.h} opacity={0.9} />
-              </g>
-            );
-          })}
+        <g transform={`translate(${cx} ${cy}) scale(${sc}) rotate(${rot})`}>
+          {/* one faint glow binding it together */}
+          <ellipse rx={560} ry={480} fill="#E4D6FB" opacity={0.55 * intro} filter="url(#glowBlur)" />
+        </g>
+        {(['halo', 'core'] as const).map((layer) => (
+        <g key={layer} filter={layer === 'core' ? `url(#${id})` : `url(#halo${seed})`} opacity={layer === 'core' ? 1 : 0.55}>
+          <g transform={`translate(${cx} ${cy}) scale(${sc}) rotate(${rot})`}>
+            {ARCS.map((a, i) => {
+              const C = 2 * Math.PI * a.r;
+              const sweep = a.sweep * intro * (1 + Math.sin(f / (40 + i * 9)) * 0.08);
+              const width = a.w * (1 + pulse * (0.35 - i * 0.08)) * (layer === 'halo' ? 2.6 : 1);
+              return (
+                <circle key={i} r={a.r} fill="none" stroke={`url(#arcg${i})`} strokeWidth={width} strokeLinecap="round" opacity={a.o}
+                  strokeDasharray={`${sweep * C} ${C}`} transform={`rotate(${f * a.speed + i * 120})`} />
+              );
+            })}
+          </g>
+        </g>
+        ))}
+        {/* the hairline ring with fine ticks, crisp */}
+        <g transform={`translate(${cx} ${cy}) scale(${sc}) rotate(${rot - f * 0.08})`} opacity={0.55 * intro}>
+          <circle r={600} fill="none" stroke="#7B5CF0" strokeWidth={2.2} strokeDasharray={`${0.62 * 2 * Math.PI * 600} ${2 * Math.PI * 600}`} strokeLinecap="round" />
+          <circle r={624} fill="none" stroke="#7B5CF0" strokeWidth={10} strokeDasharray={`1.6 ${(2 * Math.PI * 624) / 120 - 1.6}`} opacity={0.6} />
+          <circle r={770} fill="none" stroke="#C9A8F7" strokeWidth={1.6} strokeDasharray={`${0.3 * 2 * Math.PI * 770} ${2 * Math.PI * 770}`} transform="rotate(200)" />
         </g>
       </svg>
     </AbsoluteFill>
@@ -423,9 +421,16 @@ const SFX: [number, string, number][] = [
   [600, 'whoosh', 0.18], [797, 'bloom', 0.3],
 ];
 
-// the blob ensemble: a formation per scene, and the spoken beats that swell a blob (see Page)
+// the arc system: a pose per scene (centre x, y, scale, rotation) and the spoken beats that pulse the arcs (see Page)
 const PLAN: Plan = {
-  at: [[0, 'corners'], [74, 'orbit'], [186, 'dawn'], [262, 'stage'], [604, 'hemispheres'], [700, 'dawn']],
+  at: [
+    [0, [540, 2060, 1.05, -90]], // horizon lines under the symptoms
+    [74, [540, 900, 0.92, 0]], // orbits round the floating cards
+    [186, [540, 2150, 1.15, -60]], // sinking low, under the name
+    [262, [540, 1120, 0.78, 90]], // a frame round the phone, under the titles
+    [604, [540, 2040, 1.0, -90]], // horizon again under the brain line
+    [736, [540, 2280, 1.12, -120]], // and low again under the call to action, like the opening
+  ],
   beats: [6, 31, 55, 162, 246, 355, 369, 377, 385, 455, 477, 494, 583, 621, 678, 797],
 };
 

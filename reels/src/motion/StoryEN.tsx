@@ -344,9 +344,16 @@ const SFX: [number, string, number][] = [
   [734, 'blip', 0.18], [759, 'blip', 0.18], [783, 'blip', 0.18], [799, 'whip', 0.22], [902, 'ding', 0.25], [912, 'star', 0.2], [920, 'whoosh', 0.18], [1050, 'bloom', 0.3],
 ];
 
-// the blob ensemble: a formation per scene, and the spoken beats that swell a blob (see Page in Story.tsx)
+// the arc system: a pose per scene (centre x, y, scale, rotation) and the spoken beats that pulse the arcs (see Page)
 const PLAN: Plan = {
-  at: [[0, 'corners'], [168, 'orbit'], [264, 'dawn'], [368, 'stage'], [922, 'hemispheres'], [1012, 'dawn']],
+  at: [
+    [0, [540, 2060, 1.05, -90]], // horizon lines under the opening words
+    [168, [540, 900, 0.92, 0]], // orbits round the floating cards
+    [264, [540, 2150, 1.15, -60]], // sinking low, under the name
+    [368, [540, 1110, 0.78, 90]], // a frame round the phone, under the titles
+    [922, [540, 2040, 1.0, -90]], // horizon under the closing words
+    [1012, [540, 2280, 1.12, -120]], // and low again under the call to action, like the opening
+  ],
   beats: [6, 81, 107, 135, 247, 281, 461, 469, 476, 484, 503, 600, 646, 656, 665, 734, 759, 783, 902, 945, 990, 1050],
 };
 
