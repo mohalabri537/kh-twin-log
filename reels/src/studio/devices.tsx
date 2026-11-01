@@ -1,5 +1,5 @@
 import React from 'react';
-import {Img, staticFile} from 'remotion';
+import {Img, OffthreadVideo, staticFile} from 'remotion';
 import {EN} from '../theme';
 
 // Devices for the studio cut, drawn in CSS from real proportions (no logos or trademarks). They only frame the
@@ -39,9 +39,13 @@ export const Phone: React.FC<{
 }> = ({src, k, cx, top, scrollY = 0, layers = [], o = 1, lift = 0, tilt = 0, rx = 0, glint = 0, children}) => {
   const b = phoneBox(k);
   const inner = b.rim + b.border;
-  const page = (s: string, y: number, op: number, key: string) => (
-    <Img key={key} src={staticFile(`cap/${s}`)} style={{position: 'absolute', left: 0, top: (SB - y) * k, width: b.sw, opacity: op}} />
-  );
+  // a capture in public/cap, or a recording in public/rec (.mp4, 390 x 844 CSS px)
+  const page = (s: string, y: number, op: number, key: string) =>
+    s.endsWith('.mp4') ? (
+      <OffthreadVideo key={key} src={staticFile(`rec/${s}`)} muted style={{position: 'absolute', left: 0, top: SB * k, width: b.sw, opacity: op}} />
+    ) : (
+      <Img key={key} src={staticFile(`cap/${s}`)} style={{position: 'absolute', left: 0, top: (SB - y) * k, width: b.sw, opacity: op}} />
+    );
   const btn = (side: 'left' | 'right', y: number, h: number) => (
     <div style={{position: 'absolute', [side]: -b.sw * 0.007, top: b.h * y, width: b.sw * 0.012, height: b.h * h, borderRadius: b.sw * 0.006, background: 'linear-gradient(90deg, #bfc1c4, #f1f1f2 50%, #a7a9ad)', boxShadow: '0 0 0 0.5px rgba(0,0,0,.18)'}} />
   );
