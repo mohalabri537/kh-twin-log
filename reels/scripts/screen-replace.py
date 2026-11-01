@@ -69,7 +69,8 @@ def corners(m):
         t = np.linalg.solve(np.array([u, -w]).T, w0 - u0)[0]
         return u0 + t * u
 
-    return np.array([cross(L[3], L[0]), cross(L[0], L[1]), cross(L[1], L[2]), cross(L[2], L[3])], np.float32)
+    q = np.array([cross(L[3], L[0]), cross(L[0], L[1]), cross(L[1], L[2]), cross(L[2], L[3])], np.float32)
+    return q, bool(pts[:, 1].max() >= m.shape[0] - 3)  # True: the screen runs off the bottom of the frame
 
 
 def despill(img, screen):
@@ -99,7 +100,20 @@ print(len(frames), 'frames', frames[0].shape[1], 'x', frames[0].shape[0], f'{fps
 
 # corners for every frame, then smoothed over time (a short centred window) so the screen never jitters
 masks = [green_mask(f) for f in frames]
-quads = [corners(m) for m in masks]
+found = [corners(m) for m in masks]
+quads = [f[0] if f else None for f in found]
+clipped = [bool(f and f[1]) for f in found]
+# where the bottom of the screen is out of frame, its sides still run on: set the bottom corners down each side at the
+# screen's own length, measured (relative to the top edge) in the nearest frame where the whole screen was visible
+whole = [i for i, q in enumerate(quads) if q is not None and not clipped[i]]
+ratio = lambda q: (np.linalg.norm(q[3] - q[0]) + np.linalg.norm(q[2] - q[1])) / 2 / np.linalg.norm(q[1] - q[0])
+for i, q in enumerate(quads):
+    if q is None or not clipped[i] or not whole: continue
+    r = ratio(quads[min(whole, key=lambda j: abs(j - i))])
+    top = np.linalg.norm(q[1] - q[0])
+    for c, s in ((3, 0), (2, 1)):
+        v = q[c] - q[s]; v /= np.linalg.norm(v)
+        q[c] = q[s] + v * r * top
 idx = [i for i, q in enumerate(quads) if q is not None]
 Q = np.array([quads[i] if quads[i] is not None else quads[min(idx, key=lambda j: abs(j - i))] for i in range(len(frames))])
 k = np.array([1, 2, 3, 2, 1], np.float32); k /= k.sum()
@@ -110,7 +124,7 @@ for i, (img, m, q) in enumerate(zip(frames, masks, Qs)):
     scr = screen_image(a.start + int(i * a.rate))
     H, W = scr.shape[:2]
     Hm = cv2.getPerspectiveTransform(np.float32([[0, 0], [W, 0], [W, H], [0, H]]), q.astype(np.float32))
-    warped = cv2.warpPerspective(scr, Hm, (img.shape[1], img.shape[0]), flags=cv2.INTER_LANCZOS4).astype(np.float32)
+    warped = cv2.warpPerspective(scr, Hm, (img.shape[1], img.shape[0]), flags=cv2.INTER_LANCZOS4, borderMode=cv2.BORDER_REPLICATE).astype(np.float32)  # never black past the page's edge
     yy, xx = np.mgrid[0:img.shape[0], 0:img.shape[1]].astype(np.float32)
     span = max(1.0, q[1][0] - q[0][0])
     sheen = np.clip(1 - np.abs(((xx - q[0][0]) * 0.6 + (yy - q[0][1]) * 0.4) / span - 0.35 - 0.15 * i / len(frames)) * 2.2, 0, 1) * 14
