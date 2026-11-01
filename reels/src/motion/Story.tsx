@@ -91,8 +91,8 @@ export const Slam: React.FC<{f: number; at: number; leave?: number; children: Re
 };
 
 // the whole frame kicks a little on every cut (a quick zoom that settles), and shakes on the counter's stamps
-const CUTS = [6, 31, 55, 83, 123, 162, 188, 246, 266, 299, 353, 366, 379, 389, 408, 455, 477, 494, 521, 583, 608, 646, 703, 797];
-const SHAKES = [353, 366, 379, 389];
+const CUTS = [6, 31, 55, 83, 123, 162, 188, 246, 266, 310, 355, 369, 377, 385, 408, 455, 477, 494, 521, 583, 608, 646, 703, 797];
+const SHAKES = [355, 369, 377, 385];
 const kick = (f: number) => {
   const c = CUTS.filter((x) => x <= f).pop();
   return c === undefined ? 0 : Math.exp(-(f - c) / 4) * 0.045;
@@ -216,7 +216,7 @@ const Brand: React.FC<{f: number}> = ({f}) => {
 // ---------------------------------------------------------------- 8.9–20.2 s three stops on a flat phone, each cut in on its spoken title
 type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]};
 const USES: Use[] = [
-  {from: 266, to: 405, rec: 'phone-guide.mp4', head: [['اعرفْ', 269], ['أعراضَك', 279, VIO]], sub: [['ومتى', 299], ['تتصلُ', 316], ['بالطوارئ', 326, '#D70015']], chips: [['heart', 200, 1000, 284], ['wave', 860, 1150, 300], ['head', 200, 1260, 312]]},
+  {from: 266, to: 405, rec: 'phone-guide.mp4', head: [['اعرفْ', 269], ['أعراضَك', 282, VIO]], sub: [['ومتى', 310], ['تتصلُ', 326], ['برقمِ', 344], ['الطوارئ', 355, '#D70015']], chips: [['heart', 200, 1000, 284], ['wave', 860, 1150, 300], ['head', 200, 1260, 312]]},
   {from: 403, to: 521, rec: 'phone-doctors.mp4', head: [['تعرَّفْ على', 408], ['أطبائنا', 426, VIO]], sub: [['استشاريون', 455], ['للكبار', 477], ['والأطفال', 494, VIO]], chips: [['star', 860, 900, 432]]},
   {from: 518, to: 606, rec: 'phone-book.mp4', head: [['احجزْ', 521], ['موعدَك', 534, VIO]], sub: [['في دقيقة', 547]], chips: [['cal', 200, 960, 536], ['check', 200, 1260, 556]]},
 ];
@@ -242,14 +242,14 @@ const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
   );
 };
 
-// the emergency number stamps up one nine per spoken «تسعة»
-const NINES = [353, 366, 379, 389];
+// the emergency number stamps up on «الطوارئ» (a beat of the score), then one nine per half-beat
+const NINES = [355, 369, 377, 385];
 const Counter: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
-  if (f < 353 || f > 406) return null;
+  if (f < 355 || f > 406) return null;
   const n = NINES.filter((x) => x <= f).length;
   const k = spring({frame: f - NINES[n - 1], fps, config: {damping: 10, stiffness: 300, mass: 0.5}});
-  const first = spring({frame: f - 353, fps, config: {damping: 12, stiffness: 220, mass: 0.6}});
+  const first = spring({frame: f - 355, fps, config: {damping: 12, stiffness: 220, mass: 0.6}});
   const leave = io(p(f, 397, 9));
   return (
     <div style={{position: 'absolute', right: 140, top: 760 - leave * 1500, transform: `rotate(${6 - first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '100% 50%'}}>
@@ -343,7 +343,7 @@ const Cta: React.FC<{f: number}> = ({f}) => {
 
 const SFX: [number, string, number][] = [
   [6, 'blip', 0.22], [31, 'blip', 0.22], [55, 'blip', 0.22], [76, 'whoosh', 0.2], [152, 'whip', 0.25], [162, 'bloom', 0.25],
-  [186, 'zip', 0.15], [246, 'spark', 0.25], [250, 'scan', 0.12], [262, 'whoosh', 0.22], [353, 'tap', 0.3], [366, 'tap', 0.3], [379, 'tap', 0.3], [389, 'lock', 0.3],
+  [186, 'zip', 0.15], [246, 'spark', 0.25], [250, 'scan', 0.12], [262, 'whoosh', 0.22], [355, 'tap', 0.3], [369, 'tap', 0.3], [377, 'tap', 0.3], [385, 'lock', 0.3],
   [397, 'whip', 0.22], [455, 'blip', 0.18], [477, 'blip', 0.18], [494, 'blip', 0.18], [513, 'whip', 0.22], [583, 'ding', 0.25], [594, 'star', 0.2],
   [600, 'whoosh', 0.18], [797, 'bloom', 0.3],
 ];

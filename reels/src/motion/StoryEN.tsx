@@ -26,9 +26,9 @@ const CAPS: {from: number; to: number; w: W[]}[] = [
   {from: 230, to: 264, w: [["We've", 230], ['got', 241], ['you.', 247]]},
   {from: 267, to: 306, w: [['Neuro', 267], ['Universe', 281], ['Clinic', 296]]},
   {from: 307, to: 372, w: [['has', 308], ['a', 320], ['brand-new', 325], ['website,', 342]]},
-  {from: 373, to: 420, w: [['a', 374], ['clear', 378], ['symptom', 386], ['guide,', 397]]},
-  {from: 421, to: 447, w: [['and', 422], ['when', 425], ['to', 431], ['call', 437]]},
-  {from: 448, to: 496, w: [['9', 448], ['9', 458], ['9', 469], ['9.', 480]]},
+  {from: 373, to: 424, w: [['A', 375], ['clear', 378], ['symptom', 389], ['guide,', 401]]},
+  {from: 425, to: 457, w: [['and', 427], ['when', 437], ['to', 446], ['call', 452]]},
+  {from: 458, to: 496, w: [['the', 458], ['emergency', 464], ['number.', 478]]},
   {from: 500, to: 539, w: [['Conditions', 503], ['explained', 516]]},
   {from: 540, to: 594, w: [['in', 541], ['plain', 557], ['language.', 568]]},
   {from: 598, to: 640, w: [['Brain', 600], ['games', 605], ['to', 617], ['test', 631]]},
@@ -45,11 +45,10 @@ const CAPS: {from: number; to: number; w: W[]}[] = [
 const Captions: React.FC<{f: number}> = ({f}) => {
   const c = CAPS.find((x) => f >= x.from && f <= x.to);
   if (!c) return null;
-  const nines = c.w[0][0] === '9';
-  const k = out(p(f, c.from, 5)) * (1 - io(p(f, c.to - 3, 4)));
+    const k = out(p(f, c.from, 5)) * (1 - io(p(f, c.to - 3, 4)));
   return (
     <div style={{position: 'absolute', left: 0, right: 0, top: 1352, display: 'flex', justifyContent: 'center', opacity: k, transform: `translateY(${(1 - k) * 16}px)`}}>
-      <div style={{maxWidth: 940, padding: '18px 34px', borderRadius: 30, background: 'rgba(255,255,255,.82)', boxShadow: '0 16px 36px -18px rgba(60,20,140,.45), inset 0 0 0 1.5px rgba(124,80,255,.14)', backdropFilter: 'blur(10px)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: nines ? 6 : 14}}>
+      <div style={{maxWidth: 940, padding: '18px 34px', borderRadius: 30, background: 'rgba(255,255,255,.82)', boxShadow: '0 16px 36px -18px rgba(60,20,140,.45), inset 0 0 0 1.5px rgba(124,80,255,.14)', backdropFilter: 'blur(10px)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 14}}>
         {c.w.map(([w, at], i) => {
           const next = c.w[i + 1]?.[1] ?? c.to;
           const on = f >= at, now = on && f < next;
@@ -62,8 +61,8 @@ const Captions: React.FC<{f: number}> = ({f}) => {
 };
 
 // the whole frame kicks on every cut, and shakes on the counter's stamps
-const CUTS = [6, 35, 81, 107, 135, 176, 230, 247, 281, 372, 386, 448, 458, 469, 480, 498, 503, 594, 600, 690, 734, 759, 783, 803, 817, 902, 925, 971, 1019, 1050];
-const SHAKES = [448, 458, 469, 480];
+const CUTS = [6, 35, 81, 107, 135, 176, 230, 247, 281, 372, 389, 461, 469, 476, 484, 498, 503, 594, 600, 690, 734, 759, 783, 803, 817, 902, 925, 971, 1019, 1050];
+const SHAKES = [461, 469, 476, 484];
 const kick = (f: number) => { const c = CUTS.filter((x) => x <= f).pop(); return c === undefined ? 0 : Math.exp(-(f - c) / 4) * 0.045; };
 const shake = (f: number) => {
   const c = SHAKES.filter((x) => x <= f).pop();
@@ -193,7 +192,7 @@ const Brand: React.FC<{f: number}> = ({f}) => {
 // ---------------------------------------------------------------- 12.4–30.8 s five stops on a flat phone, each cut in on its spoken title
 type Use = {from: number; to: number; rec: string; head: [string, number, string?][]; sub: [string, number, string?][]; chips: [string, number, number, number][]};
 const USES: Use[] = [
-  {from: 372, to: 500, rec: 'phone-guide-en.mp4', head: [['A clear', 378], ['symptom guide', 386, VIO]], sub: [['and when', 422], ['to call', 431]], chips: [['heart', 200, 1000, 392], ['wave', 860, 1150, 404], ['head', 200, 1260, 414]]},
+  {from: 372, to: 500, rec: 'phone-guide-en.mp4', head: [['A clear', 378], ['symptom guide', 389, VIO]], sub: [['and when', 427], ['to call', 446], ['the emergency number', 458, '#D70015']], chips: [['heart', 200, 1000, 394], ['wave', 860, 1150, 406], ['head', 200, 1260, 416]]},
   {from: 496, to: 598, rec: 'phone-condition-en.mp4', head: [['Conditions', 503], ['explained', 516, VIO]], sub: [['in plain', 541], ['language', 568, VIO]], chips: [['head', 860, 960, 520], ['check', 200, 1240, 570]]},
   {from: 594, to: 694, rec: 'phone-games-en.mp4', head: [['Brain', 600], ['games', 605, VIO]], sub: [['to test your', 617], ['memory', 646], ['and', 656], ['focus', 665, VIO]], chips: [['bolt', 200, 960, 632]]},
   {from: 690, to: 807, rec: 'phone-doctors-en.mp4', head: [['Meet our', 696], ['doctors', 707, VIO]], sub: [['Consultants for', 734], ['adults', 759], ['and children', 771, VIO]], chips: [['star', 860, 900, 712]]},
@@ -221,14 +220,14 @@ const UseScene: React.FC<{f: number; u: Use}> = ({f, u}) => {
   );
 };
 
-// the emergency number stamps up one nine per spoken "nine"
-const NINES = [448, 458, 469, 480];
+// the emergency number stamps up on "emergency" (a beat of the score), then one nine per half-beat
+const NINES = [461, 469, 476, 484];
 const Counter: React.FC<{f: number}> = ({f}) => {
   const {fps} = useVideoConfig();
-  if (f < 448 || f > 500) return null;
+  if (f < 461 || f > 500) return null;
   const n = NINES.filter((x) => x <= f).length;
   const k = spring({frame: f - NINES[n - 1], fps, config: {damping: 10, stiffness: 300, mass: 0.5}});
-  const first = spring({frame: f - 448, fps, config: {damping: 12, stiffness: 220, mass: 0.6}});
+  const first = spring({frame: f - 461, fps, config: {damping: 12, stiffness: 220, mass: 0.6}});
   const leave = io(p(f, 492, 9));
   return (
     <div style={{position: 'absolute', left: 70, top: 760 - leave * 1500, transform: `rotate(${-6 + first * 2}deg) scale(${first * (1.25 - 0.25 * k)})`, transformOrigin: '0 50%'}}>
@@ -340,7 +339,7 @@ const Cta: React.FC<{f: number}> = ({f}) => {
 
 const SFX: [number, string, number][] = [
   [6, 'tap', 0.18], [81, 'blip', 0.22], [107, 'blip', 0.22], [135, 'blip', 0.22], [168, 'whoosh', 0.2], [218, 'whip', 0.25], [230, 'bloom', 0.25],
-  [264, 'zip', 0.15], [281, 'spark', 0.25], [330, 'scan', 0.12], [368, 'whoosh', 0.22], [448, 'tap', 0.3], [458, 'tap', 0.3], [469, 'tap', 0.3], [480, 'lock', 0.3],
+  [264, 'zip', 0.15], [281, 'spark', 0.25], [330, 'scan', 0.12], [368, 'whoosh', 0.22], [461, 'tap', 0.3], [469, 'tap', 0.3], [476, 'tap', 0.3], [484, 'lock', 0.3],
   [492, 'whip', 0.22], [590, 'whip', 0.22], [646, 'blip', 0.18], [656, 'blip', 0.18], [665, 'star', 0.2], [686, 'whip', 0.22],
   [734, 'blip', 0.18], [759, 'blip', 0.18], [783, 'blip', 0.18], [799, 'whip', 0.22], [902, 'ding', 0.25], [912, 'star', 0.2], [920, 'whoosh', 0.18], [1050, 'bloom', 0.3],
 ];

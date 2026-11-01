@@ -10,11 +10,15 @@ LANGV=${1:-ar}
 D=public/audio/story
 T=$(mktemp -d)
 if [ "$LANGV" = en ]; then
-  VO="$D/en-b.mp3"; VOF="adelay=200|200"; LEN=38; OUT="$D/mix-en.mp3"
+  # "when to call the emergency number" re-recorded and spliced over the line that read out 9999
+  python3 -I audio/splice_line.py "$D/en-b.mp3" "$D/line-en-emergency.mp3" "$T/vo-src.wav" 12.288 16.177 >/dev/null
+  VO="$T/vo-src.wav"; VOF="adelay=200|200"; LEN=38; OUT="$D/mix-en.mp3"
   python3 -I audio/extend_score.py "$D/music-2.mp3" "$T/score.wav" 118 0.11 24 40 >/dev/null
   SCORE="$T/score.wav"
 else
-  VO="$D/fus-b.mp3"; VOF="adelay=200|200"; LEN=28; OUT="$D/mix.mp3"
+  # «ومتى تتصل برقم الطوارئ» re-recorded and spliced over the line that read out 9999
+  python3 -I audio/splice_line.py "$D/fus-b.mp3" "$D/line-ar-emergency.mp3" "$T/vo-src.wav" 8.757 13.169 >/dev/null
+  VO="$T/vo-src.wav"; VOF="adelay=200|200"; LEN=28; OUT="$D/mix.mp3"
   SCORE="$D/music-2.mp3"
 fi
 # the voice, cleaned and levelled, padded to length
